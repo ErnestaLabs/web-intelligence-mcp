@@ -1,0 +1,37 @@
+[
+  {
+    "tool-request": {
+      "eventTitle": "Tool Request",
+      "eventDescription": "Charge for each MCP tool execution (search, scrape, leads, company info)",
+      "eventPriceUsd": 0.05
+    }
+  },
+  {
+    "search-web": {
+      "eventTitle": "Web Search",
+      "eventDescription": "Live Google/Bing search results",
+      "eventPriceUsd": 0.02
+    }
+  },
+  {
+    "scrape-page": {
+      "eventTitle": "Page Scrape",
+      "eventDescription": "Extract clean markdown from any URL",
+      "eventPriceUsd": 0.05
+    }
+  },
+  {
+    "find-leads": {
+      "eventTitle": "Lead Generation",
+      "eventDescription": "Find business leads from Google Maps",
+      "eventPriceUsd": 0.10
+    }
+  },
+  {
+    "company-info": {
+      "eventTitle": "Company Intelligence",
+      "eventDescription": "Enrich company data (tech stack, employees, contacts)",
+      "eventPriceUsd": 0.15
+    }
+  }
+]

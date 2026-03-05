@@ -1,0 +1,22 @@
+{
+  "title": "Web Intelligence MCP Server",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "testMode": {
+      "title": "Test Mode",
+      "type": "boolean",
+      "description": "Enable test mode to verify API keys without charging",
+      "default": false,
+      "editor": "checkbox"
+    },
+    "testQuery": {
+      "title": "Test Search Query",
+      "type": "string",
+      "description": "Optional test query to verify search functionality on startup",
+      "editor": "textfield",
+      "default": "AI agents 2024"
+    }
+  },
+  "required": []
+}

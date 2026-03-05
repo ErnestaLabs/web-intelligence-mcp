@@ -1,0 +1,35 @@
+{
+  "actorSpecification": 1,
+  "name": "web-intelligence-mcp",
+  "title": "Web Intelligence MCP Server",
+  "description": "Real-time web intelligence for AI agents. Search, scrape, find leads, and enrich company data. Agents pay per tool call.",
+  "version": "1.0.0",
+  "usesStandbyMode": true,
+  "minMemoryMbytes": 1024,
+  "maxMemoryMbytes": 4096,
+  "webServerMcpPath": "/sse",
+  "buildTag": "latest",
+  "environmentVariables": {
+    "APIFY_LOG_LEVEL": "INFO",
+    "SERPAPI_KEY": "@SERPAPI_KEY",
+    "JINA_AI_KEY": "@JINA_AI_KEY",
+    "GOOGLE_PLACES_API_KEY": "@GOOGLE_PLACES_API_KEY",
+    "CLEARBIT_API_KEY": "@CLEARBIT_API_KEY",
+    "BUILTWITH_API_KEY": "@BUILTWITH_API_KEY",
+    "HUNTER_API_KEY": "@HUNTER_API_KEY"
+  },
+  "inputSchema": {
+    "title": "Web Intelligence MCP Server",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+      "searchQuery": {
+        "title": "Test Search Query",
+        "type": "string",
+        "description": "Optional test query to verify search functionality",
+        "editor": "textfield"
+      }
+    },
+    "required": []
+  }
+}

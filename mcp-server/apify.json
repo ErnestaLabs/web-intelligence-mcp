@@ -1,0 +1,13 @@
+{
+  "name": "web-intelligence-mcp",
+  "version": "1.0.0",
+  "buildTag": "latest",
+  "environmentVariables": {
+    "SERPAPI_KEY": "@SERPAPI_KEY",
+    "JINA_AI_KEY": "@JINA_AI_KEY",
+    "GOOGLE_PLACES_API_KEY": "@GOOGLE_PLACES_API_KEY",
+    "CLEARBIT_API_KEY": "@CLEARBIT_API_KEY",
+    "BUILTWITH_API_KEY": "@BUILTWITH_API_KEY",
+    "HUNTER_API_KEY": "@HUNTER_API_KEY"
+  }
+}
