@@ -1,5 +1,5 @@
 ﻿# Web Intelligence MCP Server - Apify Actor Dockerfile
-# Build: 2
+# Build: 4 - Force fresh build
 
 FROM node:20-slim
 
@@ -22,8 +22,8 @@ WORKDIR /usr/src/app
 # Copy package files first (for better caching)
 COPY package*.json tsconfig.json ./
 
-# Install ALL dependencies (including devDependencies for TypeScript build)
-RUN npm ci
+# Install dependencies (npm install since no package-lock.json)
+RUN npm install
 
 # Copy source code
 COPY src ./src
