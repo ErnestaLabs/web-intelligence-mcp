@@ -137,7 +137,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
   
-  Actor.log.info(`Tool called: ${name}`, { args });
+  console.log(`Tool called: ${name}`, args);
 
   try {
     switch (name) {
@@ -162,7 +162,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new Error(`Unknown tool: ${name}`);
     }
   } catch (error) {
-    Actor.log.error(`Tool execution failed: ${name}`, { error });
+    console.error(`Tool execution failed: ${name}`, error);
     return {
       content: [
         {
@@ -494,7 +494,7 @@ if (transportType === 'stdio') {
   // Stdio transport for local testing
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  Actor.log.info('MCP server running on stdio');
+  console.log('MCP server running on stdio');
 } else {
   // SSE transport for Apify Standby mode
   // Apify's web server handles the HTTP/SSE layer
@@ -521,7 +521,7 @@ if (transportType === 'stdio') {
         server.connect(transport);
         
         req.on('close', () => {
-          Actor.log.info('Client disconnected');
+          console.log('Client disconnected');
         });
         return;
       }
@@ -532,8 +532,8 @@ if (transportType === 'stdio') {
     });
     
     httpServer.listen(port, () => {
-      Actor.log.info(`MCP server running on port ${port}`);
-      Actor.log.info(`SSE endpoint: http://localhost:${port}/sse`);
+      console.log(`MCP server running on port ${port}`);
+      console.log(`SSE endpoint: http://localhost:${port}/sse`);
     });
   });
 }
