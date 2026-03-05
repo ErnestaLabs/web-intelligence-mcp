@@ -19,14 +19,17 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 WORKDIR /usr/src/app
 
 # Copy package files
-COPY package*.json ./
+COPY package*.json tsconfig.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including devDependencies for build)
+RUN npm ci
 
-# Copy built app
-COPY dist ./dist
+# Copy source code
+COPY src ./src
 COPY .actor ./.actor
+
+# Build TypeScript
+RUN npm run build
 
 # Expose port (Apify sets APIFY_WEB_SERVER_PORT)
 EXPOSE 3000
