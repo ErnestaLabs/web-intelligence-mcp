@@ -43,10 +43,8 @@ async function handleFindEmails({ domain, limit = 10 }: { domain: string; limit?
 async function handleGetCompanyInfo({ domain, find_emails = true }: { domain: string; find_emails?: boolean }) {
   await Actor.charge({ eventName: 'get-company-info' });
   
-  // Clean domain
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   
-  // Scrape website
   let websiteData: any = {};
   try {
     const url = `https://${cleanDomain}`;
@@ -76,7 +74,6 @@ async function handleGetCompanyInfo({ domain, find_emails = true }: { domain: st
     websiteData = { error: 'Failed to scrape website', details: (error as Error).message };
   }
 
-  // Get email pattern from Hunter if enabled
   let emailData: any = {};
   if (find_emails && process.env.HUNTER_API_KEY) {
     try {
@@ -124,17 +121,18 @@ async function handleCallActor({
   
   console.log(`Calling actor ${actor_id} with input:`, JSON.stringify(input, null, 2));
   
-  // Start the actor run
   const run = await Actor.start(actor_id, input);
   console.log(`Actor run started: ${run.id}`);
   
-  // Wait for completion with timeout
   const timeout = timeout_secs * 1000;
   const startTime = Date.now();
+
+  // FIX: exponential backoff instead of fixed 2s polling
+  let pollInterval = 2000;
+  const maxPollInterval = 15000;
   
   while (true) {
     if (Date.now() - startTime > timeout) {
-      // Don't fail, just return the run ID so user can check later
       return {
         content: [{
           type: 'text',
@@ -157,7 +155,6 @@ async function handleCallActor({
     }
     
     if (runInfo.status === 'SUCCEEDED') {
-      // Fetch results from default dataset
       const datasetItems: any[] = [];
       try {
         const datasetClient = Actor.apifyClient.dataset(runInfo.defaultDatasetId);
@@ -165,16 +162,17 @@ async function handleCallActor({
         const limit = 1000;
         
         while (true) {
-          const { items, total } = await datasetClient.listItems({ offset, limit });
+          // FIX: use 'count' instead of 'total' — listItems returns { items, count, total, offset, limit }
+          const result = await datasetClient.listItems({ offset, limit });
+          const items = result.items ?? [];
           datasetItems.push(...items);
           offset += items.length;
-          if (offset >= total || items.length === 0) break;
+          if (items.length === 0 || items.length < limit) break;
         }
       } catch (e) {
         console.warn('Could not fetch dataset items:', e);
       }
       
-      // Fetch key-value store output if exists
       let output: any = null;
       try {
         const kvStore = Actor.apifyClient.keyValueStore(runInfo.defaultKeyValueStoreId);
@@ -194,7 +192,7 @@ async function handleCallActor({
             duration: runInfo.stats?.durationSecs,
             cost_usd: runInfo.stats?.costUsd,
             dataset_items_count: datasetItems.length,
-            dataset_sample: datasetItems.slice(0, 10), // Return first 10 items
+            dataset_sample: datasetItems.slice(0, 10),
             output: output?.value || null,
           }, null, 2),
         }],
@@ -205,56 +203,76 @@ async function handleCallActor({
       throw new Error(`Actor run ${runInfo.status}: ${runInfo.statusMessage || 'Unknown error'}`);
     }
     
-    // Sleep before polling again
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, pollInterval));
+    pollInterval = Math.min(pollInterval * 1.5, maxPollInterval); // backoff
   }
 }
 
 // Server Transport Setup
 async function main() {
-  // Determine transport type from environment
   const transportType = process.env.MCP_TRANSPORT || 'stdio';
   
   if (transportType === 'sse') {
-    // HTTP SSE Transport (for remote connections)
     const port = parseInt(process.env.PORT || '3000');
     const http = await import('http');
     const express = await import('express');
     
     const app = express.default();
-    const server = http.createServer(app);
-    
+
+    // FIX: track active SSE transports per client so POST /messages routes correctly
+    const activeTransports = new Map<string, SSEServerTransport>();
+
     app.get('/sse', async (req, res) => {
       const transport = new SSEServerTransport('/messages', res);
-      await server.connect(transport);
+
+      // Each SSE transport has a sessionId assigned by the MCP SDK
+      const sessionId = transport.sessionId;
+      activeTransports.set(sessionId, transport);
+
+      res.on('close', () => {
+        activeTransports.delete(sessionId);
+        console.log(`Client disconnected: ${sessionId}`);
+      });
+
+      await mcpServer.connect(transport); // FIX: use mcpServer, not httpServer
+      console.log(`Client connected: ${sessionId}`);
     });
-    
-    app.post('/messages', async (req, res) => {
-      // Note: In production, you'd need to properly route this to the correct transport instance
-      res.status(200).send('OK');
+
+    app.post('/messages', express.default.json(), async (req, res) => {
+      // FIX: route incoming message to the correct client's transport
+      const sessionId = req.query.sessionId as string;
+
+      if (!sessionId || !activeTransports.has(sessionId)) {
+        res.status(400).json({ error: 'Invalid or missing sessionId' });
+        return;
+      }
+
+      const transport = activeTransports.get(sessionId)!;
+      await transport.handlePostMessage(req, res);
     });
-    
-    server.listen(port, () => {
+
+    // FIX: renamed to httpServer to avoid collision with mcpServer
+    const httpServer = http.createServer(app);
+    httpServer.listen(port, () => {
       console.log(`MCP Server running on port ${port} (SSE mode)`);
     });
   } else {
-    // Stdio Transport (default, for local MCP clients like Claude Desktop)
+    // Stdio Transport (default)
     const transport = new StdioServerTransport();
-    await server.connect(transport);
-    console.error('MCP Server running on stdio'); // stderr so it doesn't interfere with protocol
+    await mcpServer.connect(transport);
+    console.error('MCP Server running on stdio');
   }
 }
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  await server.close();
+  await mcpServer.close();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-  await server.close();
+  await mcpServer.close();
   process.exit(0);
 });
 
-// Start server
 main().catch(console.error);
