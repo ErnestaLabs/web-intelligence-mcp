@@ -1,7 +1,7 @@
 import { Actor } from 'apify';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { 
   CallToolRequestSchema, 
   ListToolsRequestSchema 
@@ -636,12 +636,22 @@ async function main() {
     const http = await import('http');
     const express = await import('express');
     const app = express.default();
+    const activeTransports = new Map<string, SSEServerTransport>();
 
-    app.post('/', express.default.json(), async (req: any, res: any) => {
-      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-      res.on('close', () => transport.close());
+    app.get('/sse', async (req: any, res: any) => {
+      const transport = new SSEServerTransport('/messages', res);
+      const sessionId = transport.sessionId;
+      activeTransports.set(sessionId, transport);
+      res.on('close', () => activeTransports.delete(sessionId));
       await mcpServer.connect(transport);
-      await transport.handleRequest(req, res, req.body);
+      console.error(`[Forage] Connected: ${sessionId}`);
+    });
+
+    app.post('/messages', express.default.json(), async (req: any, res: any) => {
+      const sessionId = req.query.sessionId as string;
+      if (!sessionId || !activeTransports.has(sessionId))
+        return res.status(400).json({ error: 'Invalid sessionId' });
+      await activeTransports.get(sessionId)!.handlePostMessage(req, res);
     });
 
     app.get('/health', (_req: any, res: any) => res.json({ status: 'ok', tools: TOOLS.length }));
