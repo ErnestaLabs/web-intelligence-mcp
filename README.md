@@ -124,33 +124,30 @@ Skills are multi-step workflows triggered with a single call. Your agent gets a 
 
 ## Connecting to Your AI Agent
 
-### Claude Desktop
+### Claude Desktop / Cursor / Windsurf / any MCP client
 
-Add to `claude_desktop_config.json`:
+Add to your MCP config file (`claude_desktop_config.json` for Claude Desktop):
 
 ```json
 {
   "mcpServers": {
     "forage": {
       "command": "npx",
-      "args": ["-y", "@apify/actor-mcp-server", "--actors=ernesta_labs/forage"]
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.apify.com/?tools=actors,docs,ernesta_labs/forage----mcp-server-for-ai-agents",
+        "--header",
+        "Authorization: Bearer <YOUR_APIFY_API_TOKEN>"
+      ]
     }
   }
 }
 ```
 
-### Cursor / Windsurf / any MCP client
+Replace `<YOUR_APIFY_API_TOKEN>` with your token from [Apify Console → Settings → Integrations](https://console.apify.com/account/integrations).
 
-Use the Apify MCP gateway with actor ID `ernesta_labs/forage`.
-
-### Direct SSE Connection
-
-```
-GET https://{actor-run-hostname}/sse
-POST https://{actor-run-hostname}/messages?sessionId={id}
-```
-
-See the API tab for full OpenAPI documentation.
+That's it. Restart your client and Forage tools will appear automatically.
 
 ---
 
