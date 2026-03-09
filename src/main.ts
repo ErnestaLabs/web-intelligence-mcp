@@ -37,7 +37,15 @@ const PRICING = {
   
   // Open Access
   OPEN_ACCESS_MARKUP_PERCENT: 25,
-  OPEN_ACCESS_MINIMUM_FEE: 0.01
+  OPEN_ACCESS_MINIMUM_FEE: 0.01,
+
+  // Skills
+  SKILL_COMPANY_DOSSIER: { event: 'skill-company-dossier', charge: 0.50 },
+  SKILL_PROSPECT_COMPANY: { event: 'skill-prospect-company', charge: 0.75 },
+  SKILL_OUTBOUND_LIST: { event: 'skill-outbound-list', charge: 3.50 },
+  SKILL_LOCAL_MARKET_MAP: { event: 'skill-local-market-map', charge: 0.80 },
+  SKILL_COMPETITOR_INTEL: { event: 'skill-competitor-intel', charge: 0.60 },
+  SKILL_DECISION_MAKER: { event: 'skill-decision-maker', charge: 1.00 },
 };
 
 const VERIFIED_ACTORS = new Map<string, { charge: number; unit: string; desc: string }>([
@@ -207,6 +215,82 @@ const TOOLS = [
       required: ['actor_id', 'input'],
     },
   },
+  // ==========================================
+  // SKILLS
+  // ==========================================
+  {
+    name: 'skill_company_dossier',
+    description: 'SKILL: Full company profile — website, emails, tech stack, contacts. One call. Cost: $0.50',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        domain: { type: 'string', description: 'Company domain e.g. stripe.com' },
+      },
+      required: ['domain'],
+    },
+  },
+  {
+    name: 'skill_prospect_company',
+    description: 'SKILL: Find decision makers at a company with verified emails. Cost: $0.75',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        domain: { type: 'string' },
+        seniority: { type: 'string', default: 'senior,director,vp,c_suite', description: 'Comma-separated seniority levels' },
+      },
+      required: ['domain'],
+    },
+  },
+  {
+    name: 'skill_outbound_list',
+    description: 'SKILL: 100 targeted leads with verified emails, export-ready. Cost: $3.50',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        job_title: { type: 'string' },
+        location: { type: 'string' },
+        industry: { type: 'string' },
+        company_size: { type: 'string' },
+      },
+      required: ['job_title'],
+    },
+  },
+  {
+    name: 'skill_local_market_map',
+    description: 'SKILL: Every business of a type in a location — names, phones, websites, ratings. Cost: $0.80',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        business_type: { type: 'string', description: 'e.g. dentist, restaurant, gym' },
+        location: { type: 'string', description: 'e.g. Manchester, UK' },
+      },
+      required: ['business_type', 'location'],
+    },
+  },
+  {
+    name: 'skill_competitor_intel',
+    description: 'SKILL: Scrape competitor site and extract pricing, features, positioning. Cost: $0.60',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        competitor_url: { type: 'string' },
+        focus: { type: 'string', enum: ['pricing', 'features', 'both'], default: 'both' },
+      },
+      required: ['competitor_url'],
+    },
+  },
+  {
+    name: 'skill_decision_maker_finder',
+    description: 'SKILL: 20 verified decision-maker contacts at any company. Cost: $1.00',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        domain: { type: 'string' },
+        departments: { type: 'string', default: 'sales,marketing,engineering,executive', description: 'Comma-separated departments' },
+      },
+      required: ['domain'],
+    },
+  },
 ];
 
 // ==========================================
@@ -246,6 +330,12 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
       case 'list_verified_actors': return await handleListVerifiedActors(args as any);
       case 'get_actor_schema': return await handleGetActorSchema(args as any);
       case 'call_actor': return await handleCallActor(args as any);
+      case 'skill_company_dossier': return await handleSkillCompanyDossier(args as any);
+      case 'skill_prospect_company': return await handleSkillProspectCompany(args as any);
+      case 'skill_outbound_list': return await handleSkillOutboundList(args as any);
+      case 'skill_local_market_map': return await handleSkillLocalMarketMap(args as any);
+      case 'skill_competitor_intel': return await handleSkillCompetitorIntel(args as any);
+      case 'skill_decision_maker_finder': return await handleSkillDecisionMakerFinder(args as any);
       default: throw new Error(`Unknown tool: ${name}`);
     }
   } catch (error) {
@@ -258,7 +348,7 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 // ==========================================
-// HANDLERS
+// CORE HANDLERS
 // ==========================================
 
 async function handleSearchWeb({ query, num_results = 10 }: { query: string; num_results?: number }) {
@@ -283,7 +373,6 @@ async function handleSearchWeb({ query, num_results = 10 }: { query: string; num
     }] 
   };
   
-  // Fire and forget to graph service
   graphClient.ingest('search_web', { query, results });
   return res;
 }
@@ -364,7 +453,6 @@ async function handleGetCompanyInfo({ domain, find_emails = true }: { domain: st
     }],
   };
   
-  // Fire and forget to graph service
   graphClient.ingest('get_company_info', { domain: cleanDomain, website: websiteData, email_intelligence: emailData });
   return res;
 }
@@ -407,7 +495,6 @@ async function handleFindEmails({ domain, limit = 10 }: { domain: string; limit?
     }],
   };
   
-  // Fire and forget to graph service
   graphClient.ingest('find_emails', { domain, organization: data.data?.organization, pattern: data.data?.pattern, emails });
   return res;
 }
@@ -457,7 +544,6 @@ async function handleFindLocalLeads({ keyword, location, radius = 5000, max_resu
     }] 
   };
   
-  // Fire and forget to graph service
   graphClient.ingest('find_local_leads', { keyword, location, leads });
   return res;
 }
@@ -541,7 +627,6 @@ async function handleFindLeads(args: any) {
         }],
       };
       
-      // Fire and forget to graph service
       graphClient.ingest('find_leads', { leads: formattedLeads });
       return response;
     }
@@ -556,7 +641,7 @@ async function handleFindLeads(args: any) {
 }
 
 // ==========================================
-// KNOWLEDGE GRAPH HANDLERS (Proxy to Graph Service)
+// KNOWLEDGE GRAPH HANDLERS
 // ==========================================
 
 async function handleQueryKnowledge(args: any) {
@@ -835,6 +920,305 @@ async function handleCallActor({ actor_id, input, timeout_secs = 120, max_cost_u
     await new Promise(r => setTimeout(r, pollInterval));
     pollInterval = Math.min(pollInterval * 1.5, 15000);
   }
+}
+
+// ==========================================
+// SKILL HANDLERS
+// ==========================================
+
+async function handleSkillCompanyDossier({ domain }: { domain: string }) {
+  await Actor.charge({ eventName: PRICING.SKILL_COMPANY_DOSSIER.event, count: 1 });
+
+  const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+
+  const [websiteRaw, emailsRaw] = await Promise.allSettled([
+    axios.get(`https://r.jina.ai/https://${cleanDomain}`, {
+      headers: { Authorization: `Bearer ${process.env.JINA_AI_KEY}` },
+      timeout: 15000,
+    }),
+    axios.get('https://api.hunter.io/v2/domain-search', {
+      params: { domain: cleanDomain, api_key: process.env.HUNTER_API_KEY, limit: 10 },
+      timeout: 15000,
+    }),
+  ]);
+
+  const website = websiteRaw.status === 'fulfilled' ? {
+    title: websiteRaw.value.data.split('\n')[0]?.replace(/^Title: /, ''),
+    summary: websiteRaw.value.data.split('\n').slice(1).join(' ').substring(0, 800),
+  } : { error: 'Could not fetch' };
+
+  const emailData = emailsRaw.status === 'fulfilled' ? emailsRaw.value.data.data : null;
+
+  const contacts = emailData?.emails?.slice(0, 10).map((e: any) => ({
+    name: `${e.first_name || ''} ${e.last_name || ''}`.trim(),
+    email: e.value,
+    title: e.position,
+    seniority: e.seniority,
+    department: e.department,
+    confidence: e.confidence,
+    linkedin: e.linkedin,
+  })) || [];
+
+  const dossier = {
+    domain: cleanDomain,
+    company_name: emailData?.organization || (website as any).title,
+    website_summary: website,
+    email_pattern: emailData?.pattern,
+    total_emails_found: emailData?.emails?.length || 0,
+    key_contacts: contacts,
+    cost_usd: PRICING.SKILL_COMPANY_DOSSIER.charge,
+    generated_at: new Date().toISOString(),
+  };
+
+  graphClient.ingest('skill_company_dossier', dossier);
+
+  return {
+    content: [{ type: 'text', text: JSON.stringify(dossier, null, 2) }],
+  };
+}
+
+async function handleSkillProspectCompany({ domain, seniority = 'senior,director,vp,c_suite' }: any) {
+  await Actor.charge({ eventName: PRICING.SKILL_PROSPECT_COMPANY.event, count: 1 });
+
+  const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+  const key = process.env.HUNTER_API_KEY;
+  if (!key) throw new Error('HUNTER_API_KEY not configured');
+
+  const { data } = await axios.get('https://api.hunter.io/v2/domain-search', {
+    params: { domain: cleanDomain, api_key: key, limit: 20 },
+    timeout: 15000,
+  });
+
+  const seniorityLevels = seniority.split(',').map((s: string) => s.trim().toLowerCase());
+
+  const decisionMakers = (data.data?.emails || [])
+    .filter((e: any) => !e.seniority || seniorityLevels.includes(e.seniority?.toLowerCase()))
+    .slice(0, 15)
+    .map((e: any) => ({
+      name: `${e.first_name || ''} ${e.last_name || ''}`.trim(),
+      email: e.value,
+      title: e.position,
+      seniority: e.seniority,
+      department: e.department,
+      confidence: e.confidence,
+      linkedin: e.linkedin,
+      phone: e.phone_number,
+    }));
+
+  const result = {
+    domain: cleanDomain,
+    company: data.data?.organization,
+    decision_makers_found: decisionMakers.length,
+    email_pattern: data.data?.pattern,
+    contacts: decisionMakers,
+    cost_usd: PRICING.SKILL_PROSPECT_COMPANY.charge,
+  };
+
+  graphClient.ingest('skill_prospect_company', result);
+
+  return {
+    content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+  };
+}
+
+async function handleSkillOutboundList({ job_title, location, industry, company_size }: any) {
+  await Actor.charge({ eventName: PRICING.SKILL_OUTBOUND_LIST.event, count: 1 });
+
+  const actorInput = {
+    leadsCount: 100,
+    fileName: `outbound_${Date.now()}`,
+    jobTitle: job_title,
+    locationInclude: location || '',
+    emailStatus: 'verified',
+    size: company_size || '',
+    industry: industry || '',
+  };
+
+  const run = await Actor.start('code_crafter/leads-finder', actorInput);
+  const timeout = 8 * 60 * 1000;
+  const startTime = Date.now();
+  let pollInterval = 3000;
+
+  while (true) {
+    if (Date.now() - startTime > timeout) throw new Error('Outbound list timed out');
+
+    const runInfo = await Actor.apifyClient.run(run.id).get();
+    if (!runInfo) throw new Error('Failed to get run info');
+
+    if (runInfo.status === 'SUCCEEDED') {
+      const result = await Actor.apifyClient.dataset(runInfo.defaultDatasetId!).listItems({ limit: 100 });
+      
+      const leads = result.items.map((lead: any) => ({
+        name: `${lead.first_name || ''} ${lead.last_name || ''}`.trim() || lead.name,
+        title: lead.title || lead.jobTitle,
+        company: lead.company || lead.organization,
+        email: lead.email,
+        email_verified: lead.emailStatus === 'verified',
+        linkedin: lead.linkedin || lead.linkedinUrl,
+        location: lead.location,
+        company_size: lead.companySize,
+        website: lead.website,
+        phone: lead.phone,
+      }));
+
+      const response = {
+        job_title,
+        location,
+        industry,
+        total_leads: leads.length,
+        verified_emails: leads.filter((l: any) => l.email_verified).length,
+        leads,
+        cost_usd: PRICING.SKILL_OUTBOUND_LIST.charge,
+        export_ready: true,
+      };
+
+      graphClient.ingest('skill_outbound_list', { leads });
+      return { content: [{ type: 'text', text: JSON.stringify(response, null, 2) }] };
+    }
+
+    if (['FAILED', 'ABORTED', 'TIMED_OUT'].includes(runInfo.status!)) {
+      throw new Error(`Leads actor ${runInfo.status}`);
+    }
+
+    await new Promise(r => setTimeout(r, pollInterval));
+    pollInterval = Math.min(pollInterval * 1.5, 15000);
+  }
+}
+
+async function handleSkillLocalMarketMap({ business_type, location }: any) {
+  await Actor.charge({ eventName: PRICING.SKILL_LOCAL_MARKET_MAP.event, count: 1 });
+
+  const key = process.env.GOOGLE_PLACES_API_KEY;
+  if (!key) throw new Error('GOOGLE_PLACES_API_KEY not configured');
+
+  const allResults: any[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const params: any = {
+      query: `${business_type} in ${location}`,
+      key,
+    };
+    if (pageToken) params.pagetoken = pageToken;
+
+    const { data } = await axios.get('https://maps.googleapis.com/maps/api/place/textsearch/json', { params });
+    
+    const detailed = await Promise.all(
+      (data.results || []).map(async (place: any) => {
+        try {
+          const det = await axios.get('https://maps.googleapis.com/maps/api/place/details/json', {
+            params: { place_id: place.place_id, fields: 'website,formatted_phone_number,opening_hours', key },
+          });
+          return {
+            name: place.name,
+            address: place.formatted_address,
+            phone: det.data.result?.formatted_phone_number,
+            website: det.data.result?.website,
+            rating: place.rating,
+            review_count: place.user_ratings_total,
+            open_now: det.data.result?.opening_hours?.open_now,
+            location: place.geometry?.location,
+          };
+        } catch {
+          return { name: place.name, address: place.formatted_address, rating: place.rating };
+        }
+      })
+    );
+
+    allResults.push(...detailed);
+    pageToken = data.next_page_token;
+    if (pageToken) await new Promise(r => setTimeout(r, 2000));
+  } while (pageToken && allResults.length < 60);
+
+  const result = {
+    business_type,
+    location,
+    total_found: allResults.length,
+    businesses: allResults,
+    cost_usd: PRICING.SKILL_LOCAL_MARKET_MAP.charge,
+  };
+
+  graphClient.ingest('skill_local_market_map', result);
+  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+}
+
+async function handleSkillCompetitorIntel({ competitor_url, focus = 'both' }: any) {
+  await Actor.charge({ eventName: PRICING.SKILL_COMPETITOR_INTEL.event, count: 1 });
+
+  const pages = [competitor_url];
+  if (focus === 'pricing' || focus === 'both') pages.push(`${competitor_url.replace(/\/$/, '')}/pricing`);
+  if (focus === 'features' || focus === 'both') pages.push(`${competitor_url.replace(/\/$/, '')}/features`);
+
+  const scraped = await Promise.allSettled(
+    pages.map(url =>
+      axios.get(`https://r.jina.ai/${url}`, {
+        headers: { Authorization: `Bearer ${process.env.JINA_AI_KEY}` },
+        timeout: 15000,
+      }).then(r => ({ url, content: r.data.substring(0, 3000) }))
+    )
+  );
+
+  const pages_data = scraped
+    .filter(r => r.status === 'fulfilled')
+    .map((r: any) => r.value);
+
+  const result = {
+    competitor: competitor_url,
+    focus,
+    pages_scraped: pages_data.length,
+    data: pages_data,
+    cost_usd: PRICING.SKILL_COMPETITOR_INTEL.charge,
+  };
+
+  graphClient.ingest('skill_competitor_intel', result);
+  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+}
+
+async function handleSkillDecisionMakerFinder({ domain, departments = 'sales,marketing,engineering,executive' }: any) {
+  await Actor.charge({ eventName: PRICING.SKILL_DECISION_MAKER.event, count: 1 });
+
+  const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+  const key = process.env.HUNTER_API_KEY;
+  if (!key) throw new Error('HUNTER_API_KEY not configured');
+
+  const deptList = departments.split(',').map((d: string) => d.trim().toLowerCase());
+
+  const { data } = await axios.get('https://api.hunter.io/v2/domain-search', {
+    params: { domain: cleanDomain, api_key: key, limit: 50 },
+    timeout: 15000,
+  });
+
+  const contacts = (data.data?.emails || [])
+    .filter((e: any) => {
+      if (!e.department) return true;
+      return deptList.some((d: string) => e.department?.toLowerCase().includes(d));
+    })
+    .sort((a: any, b: any) => {
+      const seniority = ['c_suite', 'vp', 'director', 'senior', 'junior'];
+      return seniority.indexOf(a.seniority) - seniority.indexOf(b.seniority);
+    })
+    .slice(0, 20)
+    .map((e: any) => ({
+      name: `${e.first_name || ''} ${e.last_name || ''}`.trim(),
+      email: e.value,
+      title: e.position,
+      seniority: e.seniority,
+      department: e.department,
+      confidence: e.confidence,
+      linkedin: e.linkedin,
+      phone: e.phone_number,
+    }));
+
+  const result = {
+    domain: cleanDomain,
+    company: data.data?.organization,
+    contacts_found: contacts.length,
+    contacts,
+    cost_usd: PRICING.SKILL_DECISION_MAKER.charge,
+  };
+
+  graphClient.ingest('skill_decision_maker_finder', result);
+  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
 }
 
 // ==========================================
