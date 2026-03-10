@@ -201,7 +201,6 @@ async function handleGetCompanyInfo({ domain, find_emails = true }: { domain: st
   } catch (e) { websiteData = { error: 'Could not fetch website' }; }
   if (find_emails) {
     try {
-      // Apollo.io People Search — free, no credits consumed
       const apolloKey = process.env.APOLLO_API_KEY;
       if (apolloKey) {
         const apolloRes = await axios.post('https://api.apollo.io/v1/mixed_people/search',
@@ -637,12 +636,19 @@ async function main() {
     const express = await import('express');
     const app = express.default();
 
-    // StreamableHTTP — single POST endpoint, stateless, proxy-safe
-    app.all('/', async (req: any, res: any) => {
-      const transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: undefined, // stateless mode
-      });
-      await mcpServer.connect(transport);
+    app.use(express.default.json());
+
+    // Create transport ONCE and reuse — not per-request
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined, // stateless mode
+    });
+    await mcpServer.connect(transport);
+
+    app.post('/', async (req: any, res: any) => {
+      await transport.handleRequest(req, res);
+    });
+
+    app.get('/', async (req: any, res: any) => {
       await transport.handleRequest(req, res);
     });
 
@@ -651,6 +657,7 @@ async function main() {
 
     http.createServer(app).listen(port, () =>
       console.error(`[Forage] StreamableHTTP on port ${port}`));
+
   } else {
     await mcpServer.connect(new StdioServerTransport());
     console.error('[Forage] Gateway on stdio');
