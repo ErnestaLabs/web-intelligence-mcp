@@ -1,4 +1,3 @@
-// src/local.ts
-import './main.ts'; // just import main.ts to start MCP server
+import './main.js';  // run the MCP server from main.ts
 
-console.log('MCP server is running locally at http://localhost:3000/sse');
+console.log('Local MCP loaded and running...');
