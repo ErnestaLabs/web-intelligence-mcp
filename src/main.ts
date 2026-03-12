@@ -633,10 +633,6 @@ async function main() {
   if (useHttp) {
     const port = parseInt(standbyPort || process.env.PORT || '3000');
     const http = await import('http');
-    const express = await import('express');
-    const app = express.default();
-
-    app.use(express.default.json());
 
     // Create transport ONCE and reuse — not per-request
     const transport = new StreamableHTTPServerTransport({
@@ -644,33 +640,38 @@ async function main() {
     });
     await mcpServer.connect(transport);
 
-    // /mcp routes — matches webServerMcpPath in actor.json
-    app.post('/mcp', async (req: any, res: any) => {
-      await transport.handleRequest(req, res, req.body);
-    });
+    const server = http.createServer(async (req, res) => {
+      const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+      const path = url.pathname;
 
-    app.get('/mcp', async (req: any, res: any) => {
-      await transport.handleRequest(req, res, req.body);
-    });
+      // Health check
+      if (path === '/health' && req.method === 'GET') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'ok', server: 'forage', tools: TOOLS.length }));
+        return;
+      }
 
-    app.delete('/mcp', async (req: any, res: any) => {
-      await transport.handleRequest(req, res, req.body);
-    });
+      // MCP routes — /mcp or / (for both POST, GET, DELETE)
+      if (path === '/mcp' || path === '/') {
+        try {
+          await transport.handleRequest(req, res);
+        } catch (err: any) {
+          console.error('[Forage] Transport error:', err);
+          if (!res.headersSent) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: err?.message || 'Internal error' }));
+          }
+        }
+        return;
+      }
 
-    // Legacy root routes
-    app.post('/', async (req: any, res: any) => {
-      await transport.handleRequest(req, res, req.body);
+      // 404 for anything else
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Not found' }));
     });
-
-    app.get('/', async (req: any, res: any) => {
-      await transport.handleRequest(req, res, req.body);
-    });
-
-    app.get('/health', (_req: any, res: any) =>
-      res.json({ status: 'ok', server: 'forage', tools: TOOLS.length }));
 
     // Bind to 0.0.0.0 — required for Apify Standby mode
-    http.createServer(app).listen(port, '0.0.0.0', () =>
+    server.listen(port, '0.0.0.0', () =>
       console.error(`[Forage] StreamableHTTP on 0.0.0.0:${port}`));
 
   } else {
