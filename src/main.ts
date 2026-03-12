@@ -627,7 +627,7 @@ async function handleSkillMarketMap({ market, max_competitors = 10 }: any) {
 // ==========================================
 
 async function main() {
-  const standbyPort = process.env.ACTOR_STANDBY_PORT;
+  const standbyPort = process.env.ACTOR_STANDBY_PORT || process.env.ACTOR_WEB_SERVER_PORT;
   const useHttp = standbyPort || process.env.TRANSPORT === 'http';
 
   if (useHttp) {
@@ -644,6 +644,20 @@ async function main() {
     });
     await mcpServer.connect(transport);
 
+    // /mcp routes — matches webServerMcpPath in actor.json
+    app.post('/mcp', async (req: any, res: any) => {
+      await transport.handleRequest(req, res);
+    });
+
+    app.get('/mcp', async (req: any, res: any) => {
+      await transport.handleRequest(req, res);
+    });
+
+    app.delete('/mcp', async (req: any, res: any) => {
+      await transport.handleRequest(req, res);
+    });
+
+    // Legacy root routes
     app.post('/', async (req: any, res: any) => {
       await transport.handleRequest(req, res);
     });
@@ -655,8 +669,9 @@ async function main() {
     app.get('/health', (_req: any, res: any) =>
       res.json({ status: 'ok', server: 'forage', tools: TOOLS.length }));
 
-    http.createServer(app).listen(port, () =>
-      console.error(`[Forage] StreamableHTTP on port ${port}`));
+    // Bind to 0.0.0.0 — required for Apify Standby mode
+    http.createServer(app).listen(port, '0.0.0.0', () =>
+      console.error(`[Forage] StreamableHTTP on 0.0.0.0:${port}`));
 
   } else {
     await mcpServer.connect(new StdioServerTransport());
@@ -664,7 +679,7 @@ async function main() {
   }
 }
 
-process.on('SIGINT', async () => { await mcpServer.close(); process.exit(0); });
-process.on('SIGTERM', async () => { await mcpServer.close(); process.exit(0); });
+process.on('SIGINT', async () => { await mcpServer.close(); await Actor.exit(); process.exit(0); });
+process.on('SIGTERM', async () => { await mcpServer.close(); await Actor.exit(); process.exit(0); });
 
 main().catch(console.error);
