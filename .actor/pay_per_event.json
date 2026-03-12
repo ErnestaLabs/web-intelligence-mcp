@@ -1,37 +1,170 @@
 [
   {
-    "tool-request": {
-      "eventTitle": "Tool Request",
-      "eventDescription": "Charge for each MCP tool execution (search, scrape, leads, company info)",
-      "eventPriceUsd": 0.05
-    }
-  },
-  {
     "search-web": {
       "eventTitle": "Web Search",
-      "eventDescription": "Live Google/Bing search results",
-      "eventPriceUsd": 0.02
+      "eventDescription": "Live Google search results via SerpAPI",
+      "eventPriceUsd": 0.03
     }
   },
   {
     "scrape-page": {
       "eventTitle": "Page Scrape",
-      "eventDescription": "Extract clean markdown from any URL",
-      "eventPriceUsd": 0.05
+      "eventDescription": "Extract clean text from any URL via Jina AI",
+      "eventPriceUsd": 0.07
     }
   },
   {
-    "find-leads": {
-      "eventTitle": "Lead Generation",
-      "eventDescription": "Find business leads from Google Maps",
+    "get-company-info": {
+      "eventTitle": "Company Info",
+      "eventDescription": "Unified company intelligence — website + contacts",
+      "eventPriceUsd": 0.08
+    }
+  },
+  {
+    "find-emails": {
+      "eventTitle": "Email Discovery",
+      "eventDescription": "Find verified emails via Apollo.io",
       "eventPriceUsd": 0.10
     }
   },
   {
-    "company-info": {
-      "eventTitle": "Company Intelligence",
-      "eventDescription": "Enrich company data (tech stack, employees, contacts)",
+    "find-local-leads": {
+      "eventTitle": "Local Lead Gen",
+      "eventDescription": "Google Maps local business lead generation",
       "eventPriceUsd": 0.15
+    }
+  },
+  {
+    "find-leads": {
+      "eventTitle": "B2B Lead Gen",
+      "eventDescription": "B2B leads with verified emails via Apify actor",
+      "eventPriceUsd": 0.25
+    }
+  },
+  {
+    "query-knowledge": {
+      "eventTitle": "Knowledge Query",
+      "eventDescription": "Query accumulated intelligence graph",
+      "eventPriceUsd": 0.02
+    }
+  },
+  {
+    "enrich-entity": {
+      "eventTitle": "Entity Enrichment",
+      "eventDescription": "Get everything known about a company or domain",
+      "eventPriceUsd": 0.03
+    }
+  },
+  {
+    "find-connections": {
+      "eventTitle": "Find Connections",
+      "eventDescription": "Find relationship paths between entities",
+      "eventPriceUsd": 0.05
+    }
+  },
+  {
+    "list-verified": {
+      "eventTitle": "List Verified Actors",
+      "eventDescription": "Browse curated verified Apify actors",
+      "eventPriceUsd": 0.01
+    }
+  },
+  {
+    "get-schema": {
+      "eventTitle": "Get Actor Schema",
+      "eventDescription": "Retrieve actor input schema and pricing",
+      "eventPriceUsd": 0.01
+    }
+  },
+  {
+    "call-actor": {
+      "eventTitle": "Call Actor",
+      "eventDescription": "Run any Apify actor with platform fee",
+      "eventPriceUsd": 0.01
+    }
+  },
+  {
+    "skill-company-dossier": {
+      "eventTitle": "Skill: Company Dossier",
+      "eventDescription": "Full company profile — website, emails, contacts",
+      "eventPriceUsd": 0.50
+    }
+  },
+  {
+    "skill-prospect-company": {
+      "eventTitle": "Skill: Prospect Company",
+      "eventDescription": "Find decision makers with verified emails",
+      "eventPriceUsd": 0.75
+    }
+  },
+  {
+    "skill-outbound-list": {
+      "eventTitle": "Skill: Outbound List",
+      "eventDescription": "100 targeted leads with verified emails",
+      "eventPriceUsd": 3.50
+    }
+  },
+  {
+    "skill-local-market-map": {
+      "eventTitle": "Skill: Local Market Map",
+      "eventDescription": "Every business of a type in a location",
+      "eventPriceUsd": 0.80
+    }
+  },
+  {
+    "skill-competitor-intel": {
+      "eventTitle": "Skill: Competitor Intel",
+      "eventDescription": "Competitor pricing, features and reviews analysis",
+      "eventPriceUsd": 0.80
+    }
+  },
+  {
+    "skill-decision-maker": {
+      "eventTitle": "Skill: Decision Maker Finder",
+      "eventDescription": "20 verified decision-maker contacts at any company",
+      "eventPriceUsd": 1.00
+    }
+  },
+  {
+    "skill-competitor-ads": {
+      "eventTitle": "Skill: Competitor Ads",
+      "eventDescription": "Find competitor active ads on Facebook and Google",
+      "eventPriceUsd": 0.65
+    }
+  },
+  {
+    "skill-job-signals": {
+      "eventTitle": "Skill: Job Signals",
+      "eventDescription": "Analyse job listings for growth and hiring signals",
+      "eventPriceUsd": 0.55
+    }
+  },
+  {
+    "skill-tech-stack": {
+      "eventTitle": "Skill: Tech Stack",
+      "eventDescription": "Discover tools, platforms and technologies a company runs",
+      "eventPriceUsd": 0.45
+    }
+  },
+  {
+    "skill-funding-intel": {
+      "eventTitle": "Skill: Funding Intel",
+      "eventDescription": "Funding rounds, investors, news and growth signals",
+      "eventPriceUsd": 0.70
+    }
+  },
+  {
+    "skill-social-proof": {
+      "eventTitle": "Skill: Social Proof",
+      "eventDescription": "Mine G2, Capterra and Trustpilot for reviews",
+      "eventPriceUsd": 0.55
+    }
+  },
+  {
+    "skill-market-map": {
+      "eventTitle": "Skill: Market Map",
+      "eventDescription": "Map an entire market — players, positioning, pricing",
+      "eventPriceUsd": 1.20
     }
   }
 ]
