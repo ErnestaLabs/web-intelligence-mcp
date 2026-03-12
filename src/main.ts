@@ -646,24 +646,24 @@ async function main() {
 
     // /mcp routes — matches webServerMcpPath in actor.json
     app.post('/mcp', async (req: any, res: any) => {
-      await transport.handleRequest(req, res);
+      await transport.handleRequest(req, res, req.body);
     });
 
     app.get('/mcp', async (req: any, res: any) => {
-      await transport.handleRequest(req, res);
+      await transport.handleRequest(req, res, req.body);
     });
 
     app.delete('/mcp', async (req: any, res: any) => {
-      await transport.handleRequest(req, res);
+      await transport.handleRequest(req, res, req.body);
     });
 
     // Legacy root routes
     app.post('/', async (req: any, res: any) => {
-      await transport.handleRequest(req, res);
+      await transport.handleRequest(req, res, req.body);
     });
 
     app.get('/', async (req: any, res: any) => {
-      await transport.handleRequest(req, res);
+      await transport.handleRequest(req, res, req.body);
     });
 
     app.get('/health', (_req: any, res: any) =>
