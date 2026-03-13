@@ -6,7 +6,7 @@ async function test() {
   const token = process.env.APIFY_TOKEN;
   if (!token) throw new Error("APIFY_TOKEN is missing");
 
-  console.log("Connecting to Apify Actor via SSE...");
+  console.log("Connecting to Apify Actor via SSE with query string token...");
   const transport = new SSEClientTransport(
     new URL("https://ernesta-labs--forage.apify.actor/sse?token=" + token)
   );

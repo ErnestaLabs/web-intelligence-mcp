@@ -166,5 +166,12 @@
       "eventDescription": "Map an entire market — players, positioning, pricing",
       "eventPriceUsd": 1.20
     }
+  },
+  {
+    "skill-kaspr-enrich": {
+      "eventTitle": "Skill: Kaspr Enrich",
+      "eventDescription": "Get verified contact info for a LinkedIn profile",
+      "eventPriceUsd": 0.75
+    }
   }
 ]

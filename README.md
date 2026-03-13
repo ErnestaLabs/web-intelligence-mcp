@@ -634,6 +634,8 @@ Set spending limits in [Apify Console → Billing](https://console.apify.com/bil
 
 **Total cost:** $2.45 for complete competitive intelligence
 
+For more detailed examples, see [EXAMPLES.md](EXAMPLES.md).
+
 ---
 
 ## Privacy & Security
@@ -644,7 +646,7 @@ Set spending limits in [Apify Console → Billing](https://console.apify.com/bil
 - **PII handling:** Personal data stored as one-way hashes
 - **Audit logs:** All tool calls logged in Apify Console
 
-See our [Privacy Policy](https://forage.dev/privacy) for details.
+See our [Privacy Policy](PRIVACY.md) for details.
 
 ---
 

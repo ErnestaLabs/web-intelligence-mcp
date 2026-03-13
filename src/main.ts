@@ -45,6 +45,7 @@ const PRICING = {
   SKILL_FUNDING_INTEL: { event: 'skill-funding-intel', charge: 0.70 },
   SKILL_SOCIAL_PROOF: { event: 'skill-social-proof', charge: 0.55 },
   SKILL_MARKET_MAP: { event: 'skill-market-map', charge: 1.20 },
+  SKILL_KASPR_ENRICH: { event: 'skill-kaspr-enrich', charge: 0.75 },
 };
 
 const VERIFIED_ACTORS = new Map<string, { charge: number; unit: string; desc: string }>([
@@ -59,33 +60,34 @@ const VERIFIED_ACTORS = new Map<string, { charge: number; unit: string; desc: st
 
 const TOOLS = [
   // CORE TOOLS
-  { name: 'search_web', description: 'Real-time web search. Use for current information, news, or when you need results stored in knowledge graph. Returns titles, URLs, snippets. Cost: $0.03', inputSchema: { type: 'object', properties: { query: { type: 'string' }, num_results: { type: 'number', default: 10 } }, required: ['query'] } },
-  { name: 'scrape_page', description: 'Extract clean text content from any URL. Use when you need webpage content as structured text. Returns title and body text. Cost: $0.07', inputSchema: { type: 'object', properties: { url: { type: 'string' } }, required: ['url'] } },
-  { name: 'get_company_info', description: 'Get website summary and email contacts for a company domain. Use for quick company overview. For comprehensive profiles use skill_company_dossier instead. Cost: $0.08', inputSchema: { type: 'object', properties: { domain: { type: 'string' }, find_emails: { type: 'boolean', default: true } }, required: ['domain'] } },
-  { name: 'find_emails', description: 'Find verified email addresses for people at a company. Returns name, email, title, seniority, department, LinkedIn, and confidence score. Use when you need contact emails for a specific domain. Cost: $0.10', inputSchema: { type: 'object', properties: { domain: { type: 'string' }, limit: { type: 'number', default: 10 } }, required: ['domain'] } },
-  { name: 'find_local_leads', description: 'Find local businesses by type and location. Returns name, address, phone, website, rating, review count. Use for local service businesses (dentists, plumbers, restaurants). For B2B tech leads use find_leads instead. Cost: $0.15', inputSchema: { type: 'object', properties: { keyword: { type: 'string' }, location: { type: 'string' }, radius: { type: 'number', default: 5000 }, max_results: { type: 'number', default: 20 } }, required: ['keyword', 'location'] } },
-  { name: 'find_leads', description: 'Generate B2B lead list with verified emails. Filter by job_title, location, industry, company_size. Returns name, email, title, company, LinkedIn. Use for outbound sales prospecting. For local businesses use find_local_leads instead. Cost: $0.25/100 leads', inputSchema: { type: 'object', properties: { job_title: { type: 'string' }, location: { type: 'string' }, industry: { type: 'string' }, company_size: { type: 'string' }, keywords: { type: 'string' }, company_website: { type: 'string' }, num_leads: { type: 'number', default: 100 }, email_status: { type: 'string', default: 'verified' } }, required: ['job_title'] } },
-  { name: 'query_knowledge', description: 'Search the knowledge graph for previously researched entities. Use to recall companies, people, or facts from past Forage tool calls. Only returns data from your previous research, not live data. Cost: $0.02', inputSchema: { type: 'object', properties: { question: { type: 'string' }, entity_type: { type: 'string', enum: ['Company', 'Person', 'Location', 'Industry', 'any'], default: 'any' }, min_confidence: { type: 'number', default: 0.7 } }, required: ['question'] } },
-  { name: 'enrich_entity', description: 'Retrieve all accumulated data about a company from the knowledge graph. Use after previous research to get full entity profile. For fresh data use get_company_info or skill_company_dossier instead. Cost: $0.03', inputSchema: { type: 'object', properties: { identifier: { type: 'string', description: 'e.g., "stripe.com" or "Stripe"' } }, required: ['identifier'] } },
-  { name: 'find_connections', description: 'Discover relationships between two entities in the knowledge graph. Returns connection paths (shared investors, employees, customers). Only works with previously researched entities. Cost: $0.05', inputSchema: { type: 'object', properties: { from_entity: { type: 'string' }, to_entity: { type: 'string' }, max_hops: { type: 'number', default: 3 } }, required: ['from_entity', 'to_entity'] } },
-  { name: 'get_graph_stats', description: 'View knowledge graph statistics: total entities, relationships, data sources. Use to understand what data has been accumulated. Free', inputSchema: { type: 'object', properties: {} } },
-  { name: 'list_verified_actors', description: 'List available Apify actors that can be run via call_actor. Returns actor IDs, descriptions, and pricing. Use before call_actor to find the right actor. Cost: $0.01', inputSchema: { type: 'object', properties: { category: { type: 'string', default: 'all' } } } },
-  { name: 'get_actor_schema', description: 'Get input schema and pricing for a specific Apify actor. Use before call_actor to understand required parameters. Cost: $0.01', inputSchema: { type: 'object', properties: { actor_id: { type: 'string' } }, required: ['actor_id'] } },
-  { name: 'call_actor', description: 'Execute any Apify actor with custom input. Use list_verified_actors and get_actor_schema first to find actors and understand inputs. Set max_cost_usd to limit spending. Cost: actor price + 25%', inputSchema: { type: 'object', properties: { actor_id: { type: 'string' }, input: { type: 'object' }, timeout_secs: { type: 'number', default: 120 }, max_cost_usd: { type: 'number' } }, required: ['actor_id', 'input'] } },
+  { name: 'search_web', description: 'Real-time web search. Use for current information, news, or when you need results stored in knowledge graph. Returns titles, URLs, snippets. Cost: $0.03', inputSchema: { type: 'object', properties: { query: { type: 'string' }, num_results: { type: 'number', default: 10 } }, required: ['query'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'scrape_page', description: 'Extract clean text content from any URL. Use when you need webpage content as structured text. Returns title and body text. Cost: $0.07', inputSchema: { type: 'object', properties: { url: { type: 'string' } }, required: ['url'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'get_company_info', description: 'Get website summary and email contacts for a company domain. Use for quick company overview. For comprehensive profiles use skill_company_dossier instead. Cost: $0.08', inputSchema: { type: 'object', properties: { domain: { type: 'string' }, find_emails: { type: 'boolean', default: true } }, required: ['domain'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'find_emails', description: 'Find verified email addresses for people at a company. Returns name, email, title, seniority, department, LinkedIn, and confidence score. Use when you need contact emails for a specific domain. Cost: $0.10', inputSchema: { type: 'object', properties: { domain: { type: 'string' }, limit: { type: 'number', default: 10 } }, required: ['domain'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'find_local_leads', description: 'Find local businesses by type and location. Returns name, address, phone, website, rating, review count. Use for local service businesses (dentists, plumbers, restaurants). For B2B tech leads use find_leads instead. Cost: $0.15', inputSchema: { type: 'object', properties: { keyword: { type: 'string' }, location: { type: 'string' }, radius: { type: 'number', default: 5000 }, max_results: { type: 'number', default: 20 } }, required: ['keyword', 'location'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'find_leads', description: 'Generate B2B lead list with verified emails. Filter by job_title, location, industry, company_size. Returns name, email, title, company, LinkedIn. Use for outbound sales prospecting. For local businesses use find_local_leads instead. Cost: $0.25/100 leads', inputSchema: { type: 'object', properties: { job_title: { type: 'string' }, location: { type: 'string' }, industry: { type: 'string' }, company_size: { type: 'string' }, keywords: { type: 'string' }, company_website: { type: 'string' }, num_leads: { type: 'number', default: 100 }, email_status: { type: 'string', default: 'verified' } }, required: ['job_title'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'query_knowledge', description: 'Search the knowledge graph for previously researched entities. Use to recall companies, people, or facts from past Forage tool calls. Only returns data from your previous research, not live data. Cost: $0.02', inputSchema: { type: 'object', properties: { question: { type: 'string' }, entity_type: { type: 'string', enum: ['Company', 'Person', 'Location', 'Industry', 'any'], default: 'any' }, min_confidence: { type: 'number', default: 0.7 } }, required: ['question'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'enrich_entity', description: 'Retrieve all accumulated data about a company from the knowledge graph. Use after previous research to get full entity profile. For fresh data use get_company_info or skill_company_dossier instead. Cost: $0.03', inputSchema: { type: 'object', properties: { identifier: { type: 'string', description: 'e.g., "stripe.com" or "Stripe"' } }, required: ['identifier'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'find_connections', description: 'Discover relationships between two entities in the knowledge graph. Returns connection paths (shared investors, employees, customers). Only works with previously researched entities. Cost: $0.05', inputSchema: { type: 'object', properties: { from_entity: { type: 'string' }, to_entity: { type: 'string' }, max_hops: { type: 'number', default: 3 } }, required: ['from_entity', 'to_entity'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'get_graph_stats', description: 'View knowledge graph statistics: total entities, relationships, data sources. Use to understand what data has been accumulated. Free', inputSchema: { type: 'object', properties: {} }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'list_verified_actors', description: 'List available Apify actors that can be run via call_actor. Returns actor IDs, descriptions, and pricing. Use before call_actor to find the right actor. Cost: $0.01', inputSchema: { type: 'object', properties: { category: { type: 'string', default: 'all' } } }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'get_actor_schema', description: 'Get input schema and pricing for a specific Apify actor. Use before call_actor to understand required parameters. Cost: $0.01', inputSchema: { type: 'object', properties: { actor_id: { type: 'string' } }, required: ['actor_id'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'call_actor', description: 'Execute any Apify actor with custom input. Use list_verified_actors and get_actor_schema first to find actors and understand inputs. Set max_cost_usd to limit spending. Cost: actor price + 25%', inputSchema: { type: 'object', properties: { actor_id: { type: 'string' }, input: { type: 'object' }, timeout_secs: { type: 'number', default: 120 }, max_cost_usd: { type: 'number' } }, required: ['actor_id', 'input'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
   // ORIGINAL SKILLS
-  { name: 'skill_company_dossier', description: 'SKILL: Comprehensive company research. Returns website summary, email patterns, and 10 key contacts with titles. Use for deep company research. For quick overview use get_company_info instead. Cost: $0.50', inputSchema: { type: 'object', properties: { domain: { type: 'string' } }, required: ['domain'] } },
-  { name: 'skill_prospect_company', description: 'SKILL: Find 15 decision makers at a company with verified emails, sorted by seniority. Use when targeting a specific company for outreach. For broader lead lists use skill_outbound_list. Cost: $0.75', inputSchema: { type: 'object', properties: { domain: { type: 'string' }, seniority: { type: 'string', default: 'senior,director,vp,c_suite' } }, required: ['domain'] } },
-  { name: 'skill_outbound_list', description: 'SKILL: Generate 100 B2B leads with verified emails, ready for CRM export. Filter by job title, location, industry, company size. Use for building outbound prospecting lists. Cost: $3.50', inputSchema: { type: 'object', properties: { job_title: { type: 'string' }, location: { type: 'string' }, industry: { type: 'string' }, company_size: { type: 'string' } }, required: ['job_title'] } },
-  { name: 'skill_local_market_map', description: 'SKILL: Find all businesses of a type in a location (up to 60). Returns name, address, phone, website, rating, hours. Use for local market research or local lead generation. Cost: $0.80', inputSchema: { type: 'object', properties: { business_type: { type: 'string' }, location: { type: 'string' } }, required: ['business_type', 'location'] } },
-  { name: 'skill_competitor_intel', description: 'SKILL: Analyze competitor pricing, features, and reviews. Scrapes pricing pages, feature lists, and review sites. Use for competitive research. Cost: $0.80', inputSchema: { type: 'object', properties: { competitor_url: { type: 'string' }, focus: { type: 'string', enum: ['pricing', 'features', 'both'], default: 'both' } }, required: ['competitor_url'] } },
-  { name: 'skill_decision_maker_finder', description: 'SKILL: Find 20 decision makers at a company with verified emails. Filter by department (sales, marketing, engineering, executive). Use when you need more contacts than skill_prospect_company provides. Cost: $1.00', inputSchema: { type: 'object', properties: { domain: { type: 'string' }, departments: { type: 'string', default: 'sales,marketing,engineering,executive' } }, required: ['domain'] } },
+  { name: 'skill_company_dossier', description: 'SKILL: Comprehensive company research. Returns website summary, email patterns, and 10 key contacts with titles. Use for deep company research. For quick overview use get_company_info instead. Cost: $0.50', inputSchema: { type: 'object', properties: { domain: { type: 'string' } }, required: ['domain'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_prospect_company', description: 'SKILL: Find 15 decision makers at a company with verified emails, sorted by seniority. Use when targeting a specific company for outreach. For broader lead lists use skill_outbound_list. Cost: $0.75', inputSchema: { type: 'object', properties: { domain: { type: 'string' }, seniority: { type: 'string', default: 'senior,director,vp,c_suite' } }, required: ['domain'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_outbound_list', description: 'SKILL: Generate 100 B2B leads with verified emails, ready for CRM export. Filter by job title, location, industry, company size. Use for building outbound prospecting lists. Cost: $3.50', inputSchema: { type: 'object', properties: { job_title: { type: 'string' }, location: { type: 'string' }, industry: { type: 'string' }, company_size: { type: 'string' } }, required: ['job_title'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_local_market_map', description: 'SKILL: Find all businesses of a type in a location (up to 60). Returns name, address, phone, website, rating, hours. Use for local market research or local lead generation. Cost: $0.80', inputSchema: { type: 'object', properties: { business_type: { type: 'string' }, location: { type: 'string' } }, required: ['business_type', 'location'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_competitor_intel', description: 'SKILL: Analyze competitor pricing, features, and reviews. Scrapes pricing pages, feature lists, and review sites. Use for competitive research. Cost: $0.80', inputSchema: { type: 'object', properties: { competitor_url: { type: 'string' }, focus: { type: 'string', enum: ['pricing', 'features', 'both'], default: 'both' } }, required: ['competitor_url'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_decision_maker_finder', description: 'SKILL: Find 20 decision makers at a company with verified emails. Filter by department (sales, marketing, engineering, executive). Use when you need more contacts than skill_prospect_company provides. Cost: $1.00', inputSchema: { type: 'object', properties: { domain: { type: 'string' }, departments: { type: 'string', default: 'sales,marketing,engineering,executive' } }, required: ['domain'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
   // NEW SKILLS
-  { name: 'skill_competitor_ads', description: 'SKILL: Find active ads from a competitor. Returns ad library links, ad copy examples, and landing pages. Use for competitive advertising research. Cost: $0.65', inputSchema: { type: 'object', properties: { competitor_name: { type: 'string', description: 'Company name e.g. "Notion"' }, competitor_domain: { type: 'string', description: 'Optional domain e.g. "notion.so"' } }, required: ['competitor_name'] } },
-  { name: 'skill_job_signals', description: "SKILL: Analyse a company's job listings to reveal growth bets, new markets and hiring strategy. Cost: $0.55", inputSchema: { type: 'object', properties: { company_name: { type: 'string' }, domain: { type: 'string', description: 'Optional domain' } }, required: ['company_name'] } },
-  { name: 'skill_tech_stack', description: 'SKILL: Discover what tools, platforms and technologies a company runs. Cost: $0.45', inputSchema: { type: 'object', properties: { domain: { type: 'string', description: 'Company domain e.g. "hubspot.com"' } }, required: ['domain'] } },
-  { name: 'skill_funding_intel', description: 'SKILL: Funding rounds, investors, recent news and growth signals for any company. Cost: $0.70', inputSchema: { type: 'object', properties: { company_name: { type: 'string' }, domain: { type: 'string', description: 'Optional domain' } }, required: ['company_name'] } },
-  { name: 'skill_social_proof', description: "SKILL: Mine G2, Capterra and Trustpilot for a company's reviews — praise, complaints, star ratings, buyer personas. Cost: $0.55", inputSchema: { type: 'object', properties: { company_name: { type: 'string' }, domain: { type: 'string', description: 'Optional domain' } }, required: ['company_name'] } },
-  { name: 'skill_market_map', description: 'SKILL: Map an entire market — find all players, positioning, pricing tiers and differentiators. Cost: $1.20', inputSchema: { type: 'object', properties: { market: { type: 'string', description: 'e.g. "email marketing software"' }, max_competitors: { type: 'number', default: 10 } }, required: ['market'] } },
+  { name: 'skill_competitor_ads', description: 'SKILL: Find active ads from a competitor. Returns ad library links, ad copy examples, and landing pages. Use for competitive advertising research. Cost: $0.65', inputSchema: { type: 'object', properties: { competitor_name: { type: 'string', description: 'Company name e.g. "Notion"' }, competitor_domain: { type: 'string', description: 'Optional domain e.g. "notion.so"' } }, required: ['competitor_name'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_job_signals', description: 'SKILL: Analyze job listings to reveal hiring strategy and growth areas. Returns job listings, department trends, and growth signals. Use for investment research or competitive intelligence. Cost: $0.55', inputSchema: { type: 'object', properties: { company_name: { type: 'string' }, domain: { type: 'string', description: 'Optional domain' } }, required: ['company_name'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_tech_stack', description: 'SKILL: Detect technologies and platforms a company uses. Returns detected tools with categories. Use for sales targeting or competitive research. Cost: $0.45', inputSchema: { type: 'object', properties: { domain: { type: 'string', description: 'Company domain e.g. "hubspot.com"' } }, required: ['domain'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_funding_intel', description: 'SKILL: Get funding history, investors, and recent news for a company. Returns funding rounds, amounts, investors, and news articles. Use for investment research or sales qualification. Cost: $0.70', inputSchema: { type: 'object', properties: { company_name: { type: 'string' }, domain: { type: 'string', description: 'Optional domain' } }, required: ['company_name'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_social_proof', description: 'SKILL: Collect reviews and testimonials for a company from review platforms. Returns reviews, ratings, and sentiment themes. Use for competitive research or sales qualification. Cost: $0.55', inputSchema: { type: 'object', properties: { company_name: { type: 'string' }, domain: { type: 'string', description: 'Optional domain' } }, required: ['company_name'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_market_map', description: 'SKILL: Discover all competitors in a market. Returns players, positioning, and pricing tiers. Use for market research or competitive landscape analysis. Cost: $1.20', inputSchema: { type: 'object', properties: { market: { type: 'string', description: 'e.g. "email marketing software"' }, max_competitors: { type: 'number', default: 10 } }, required: ['market'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_kaspr_enrich', description: 'SKILL: Get phone numbers and email addresses for a LinkedIn profile. Requires LinkedIn profile ID and full name. Returns verified contact info. Cost: $0.75', inputSchema: { type: 'object', properties: { linkedin_id: { type: 'string', description: 'LinkedIn profile ID (the part after /in/)' }, prospect_name: { type: 'string', description: 'Full name of the prospect' } }, required: ['linkedin_id', 'prospect_name'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
 ];
 
 // ==========================================
@@ -127,6 +129,7 @@ export function setupMcpServer() {
         case 'skill_funding_intel': return await handleSkillFundingIntel(args as any);
         case 'skill_social_proof': return await handleSkillSocialProof(args as any);
         case 'skill_market_map': return await handleSkillMarketMap(args as any);
+        case 'skill_kaspr_enrich': return await handleSkillKasprEnrich(args as any);
         default: throw new Error(`Unknown tool: ${name}`);
       }
     } catch (error) {
@@ -626,6 +629,40 @@ async function handleSkillMarketMap({ market, max_competitors = 10 }: any) {
   return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
 }
 
+async function handleSkillKasprEnrich({ linkedin_id, prospect_name }: any) {
+  await Actor.charge({ eventName: PRICING.SKILL_KASPR_ENRICH.event, count: 1 });
+  const apiKey = process.env.KASPR_API_KEY;
+  if (!apiKey) throw new Error("KASPR_API_KEY is not configured in Actor environment");
+
+  const res = await fetch("https://api.developers.kaspr.io/profile/linkedin", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "accept-version": "v2.0"
+    },
+    body: JSON.stringify({
+      id: linkedin_id,
+      name: prospect_name
+    })
+  });
+
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch(e) { data = text; }
+
+  const result = {
+    prospect: prospect_name,
+    linkedin_id,
+    kaspr_data: data,
+    status: res.status,
+    cost_usd: PRICING.SKILL_KASPR_ENRICH.charge
+  };
+
+  graphClient.ingest('skill_kaspr_enrich', { prospect: prospect_name, id: linkedin_id });
+  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+}
+
 // ==========================================
 // MAIN — Fixed for Apify Standby Mode
 // ==========================================
@@ -648,49 +685,64 @@ async function main() {
 
     // SSE endpoint — client connects here to establish the event stream
     app.get('/sse', async (req: any, res: any) => {
-      console.error('[Forage] SSE connection from', req.ip);
-      const mcpServer = setupMcpServer();
-      activeServers.add(mcpServer);
-      const token = req.query.token as string | undefined;
-      const endpoint = token ? `/messages?token=${token}` : '/messages';
-      const transport = new SSEServerTransport(endpoint, res);
-      transports[transport.sessionId] = transport;
-      
-      res.on('close', () => { 
-        delete transports[transport.sessionId]; 
-        activeServers.delete(mcpServer);
-      });
-      
-      await mcpServer.connect(transport);
+      try {
+        console.error('[Forage] SSE connection from', req.ip);
+        const mcpServer = setupMcpServer();
+        activeServers.add(mcpServer);
+        const token = req.query.token as string | undefined;
+        const endpoint = token ? `/messages?token=${token}` : '/messages';
+        const transport = new SSEServerTransport(endpoint, res);
+        transports[transport.sessionId] = transport;
+        
+        res.on('close', () => { 
+          delete transports[transport.sessionId]; 
+          activeServers.delete(mcpServer);
+        });
+        
+        await mcpServer.connect(transport);
+      } catch (err) {
+        console.error('[Forage] Error in /sse route:', err);
+        res.status(500).json({ error: String(err) });
+      }
     });
 
     // Messages endpoint — client POSTs JSON-RPC messages here
     app.post('/messages', express.default.json(), async (req: any, res: any) => {
-      const sessionId = req.query.sessionId as string;
-      const transport = transports[sessionId];
-      if (!transport) {
-        res.status(400).json({ error: 'Unknown session', sessionId });
-        return;
+      try {
+        const sessionId = req.query.sessionId as string;
+        const transport = transports[sessionId];
+        if (!transport) {
+          res.status(400).json({ error: 'Unknown session', sessionId });
+          return;
+        }
+        await transport.handlePostMessage(req, res, req.body);
+      } catch (err) {
+        console.error('[Forage] Error in /messages route:', err);
+        res.status(500).json({ error: String(err) });
       }
-      await transport.handlePostMessage(req, res, req.body);
     });
 
     // Also mount on /mcp for webServerMcpPath compatibility
     app.get('/mcp', async (req: any, res: any) => {
-      console.error('[Forage] SSE connection on /mcp from', req.ip);
-      const mcpServer = setupMcpServer();
-      activeServers.add(mcpServer);
-      const token = req.query.token as string | undefined;
-      const endpoint = token ? `/messages?token=${token}` : '/messages';
-      const transport = new SSEServerTransport(endpoint, res);
-      transports[transport.sessionId] = transport;
-      
-      res.on('close', () => { 
-        delete transports[transport.sessionId]; 
-        activeServers.delete(mcpServer);
-      });
-      
-      await mcpServer.connect(transport);
+      try {
+        console.error('[Forage] SSE connection on /mcp from', req.ip);
+        const mcpServer = setupMcpServer();
+        activeServers.add(mcpServer);
+        const token = req.query.token as string | undefined;
+        const endpoint = token ? `/messages?token=${token}` : '/messages';
+        const transport = new SSEServerTransport(endpoint, res);
+        transports[transport.sessionId] = transport;
+        
+        res.on('close', () => { 
+          delete transports[transport.sessionId]; 
+          activeServers.delete(mcpServer);
+        });
+        
+        await mcpServer.connect(transport);
+      } catch (err) {
+        console.error('[Forage] Error in /mcp route:', err);
+        res.status(500).json({ error: String(err) });
+      }
     });
 
     app.get('/health', (_req: any, res: any) =>

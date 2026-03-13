@@ -13,7 +13,8 @@
     "SERPAPI_KEY": "@SERPAPI_KEY",
     "JINA_AI_KEY": "@JINA_AI_KEY",
     "GOOGLE_PLACES_API_KEY": "@GOOGLE_PLACES_API_KEY",
-    "APOLLO_API_KEY": "@APOLLO_API_KEY"
+    "APOLLO_API_KEY": "@APOLLO_API_KEY",
+    "KASPR_API_KEY": "@KASPR_API_KEY"
   },
   "inputSchema": {
     "title": "Forage MCP Server",
