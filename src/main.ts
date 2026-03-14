@@ -1,7 +1,7 @@
 import { Actor } from 'apify';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { 
   CallToolRequestSchema, 
   ListToolsRequestSchema 
@@ -680,26 +680,19 @@ async function main() {
     const express = await import('express');
     const app = express.default();
 
-    // Track active transports by session for message routing
-    const transports: Record<string, SSEServerTransport> = {};
+    // The new MCP SDK manages sessions internally through a single global transport
+    const transport = new StreamableHTTPServerTransport();
+    const mcpServer = setupMcpServer();
+    activeServers.add(mcpServer);
+    
+    // Connect the single server instance to the global transport
+    await mcpServer.connect(transport);
 
     // SSE endpoint — client connects here to establish the event stream
-    app.get('/sse', async (req: any, res: any) => {
+    app.get(['/sse', '/mcp'], async (req: any, res: any) => {
       try {
         console.error('[Forage] SSE connection from', req.ip);
-        const mcpServer = setupMcpServer();
-        activeServers.add(mcpServer);
-        const token = req.query.token as string | undefined;
-        const endpoint = token ? `/messages?token=${token}` : '/messages';
-        const transport = new SSEServerTransport(endpoint, res);
-        transports[transport.sessionId] = transport;
-        
-        res.on('close', () => { 
-          delete transports[transport.sessionId]; 
-          activeServers.delete(mcpServer);
-        });
-        
-        await mcpServer.connect(transport);
+        await transport.handleRequest(req, res);
       } catch (err) {
         console.error('[Forage] Error in /sse route:', err);
         res.status(500).json({ error: String(err) });
@@ -707,40 +700,11 @@ async function main() {
     });
 
     // Messages endpoint — client POSTs JSON-RPC messages here
-    app.post('/messages', express.default.json(), async (req: any, res: any) => {
+    app.post(['/messages', '/mcp'], express.default.json(), async (req: any, res: any) => {
       try {
-        const sessionId = req.query.sessionId as string;
-        const transport = transports[sessionId];
-        if (!transport) {
-          res.status(400).json({ error: 'Unknown session', sessionId });
-          return;
-        }
-        await transport.handlePostMessage(req, res, req.body);
+        await transport.handleRequest(req, res, req.body);
       } catch (err) {
         console.error('[Forage] Error in /messages route:', err);
-        res.status(500).json({ error: String(err) });
-      }
-    });
-
-    // Also mount on /mcp for webServerMcpPath compatibility
-    app.get('/mcp', async (req: any, res: any) => {
-      try {
-        console.error('[Forage] SSE connection on /mcp from', req.ip);
-        const mcpServer = setupMcpServer();
-        activeServers.add(mcpServer);
-        const token = req.query.token as string | undefined;
-        const endpoint = token ? `/messages?token=${token}` : '/messages';
-        const transport = new SSEServerTransport(endpoint, res);
-        transports[transport.sessionId] = transport;
-        
-        res.on('close', () => { 
-          delete transports[transport.sessionId]; 
-          activeServers.delete(mcpServer);
-        });
-        
-        await mcpServer.connect(transport);
-      } catch (err) {
-        console.error('[Forage] Error in /mcp route:', err);
         res.status(500).json({ error: String(err) });
       }
     });

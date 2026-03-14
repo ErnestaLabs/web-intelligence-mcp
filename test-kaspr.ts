@@ -5,7 +5,8 @@ async function testKaspr() {
   console.log("Kaspr Key length:", apiKey?.length);
   
   const payload = {
-    url: "https://www.linkedin.com/in/william-gates/"
+    id: "william-gates", // using bill gates profile as test
+    name: "William Gates"
   };
 
   const res = await fetch("https://api.developers.kaspr.io/profile/linkedin", {
