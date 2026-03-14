@@ -8,7 +8,7 @@ async function test() {
 
   console.log("Connecting to Apify Actor via SSE with query string token...");
   const transport = new SSEClientTransport(
-    new URL("https://ernesta-labs--forage.apify.actor/sse?token=" + token)
+    new URL("https://mcamarketing--forage.apify.actor/sse?token=" + token)
   );
   
   const client = new Client({ name: "test-client", version: "1.0.0" }, { capabilities: {} });

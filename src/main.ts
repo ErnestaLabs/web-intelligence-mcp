@@ -669,6 +669,8 @@ async function handleSkillKasprEnrich({ linkedin_id, prospect_name }: any) {
 
 async function main() {
   const standbyPort = process.env.ACTOR_STANDBY_PORT || process.env.ACTOR_WEB_SERVER_PORT;
+  console.error(`[Forage] STANDBY_PORT: ${standbyPort}`);
+  console.error(`[Forage] WEB_SERVER_URL: ${process.env.ACTOR_WEB_SERVER_URL}`);
   const useHttp = standbyPort || process.env.TRANSPORT === 'http';
 
   // Keep track of all active servers so we can close them gracefully
