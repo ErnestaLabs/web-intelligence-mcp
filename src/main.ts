@@ -1,7 +1,7 @@
 import { Actor } from 'apify';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { 
   CallToolRequestSchema, 
   ListToolsRequestSchema 
@@ -673,87 +673,40 @@ async function main() {
   const useHttp = standbyPort || process.env.TRANSPORT === 'http';
 
   const activeServers = new Set<Server>();
-  const transports: Record<string, SSEServerTransport> = {};
 
   if (useHttp) {
     const http = await import('http');
-    const url = await import('url');
+    
+    // Create the modern Streamable HTTP transport
+    const transport = new StreamableHTTPServerTransport();
+    const mcpServer = setupMcpServer();
+    activeServers.add(mcpServer);
 
     const server = http.createServer(async (req, res) => {
-      const parsedUrl = url.parse(req.url || '', true);
-      const pathname = parsedUrl.pathname;
-
-      // Health Check
-      if (pathname === '/health') {
+      // Basic Health Check
+      if (req.url === '/health') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'ok', server: 'forage', tools: TOOLS.length }));
         return;
       }
 
-      // SSE Handshake
-      if (pathname === '/sse' || pathname === '/mcp') {
-        try {
-          console.error(`[Forage] SSE connection from ${req.socket.remoteAddress}`);
-          const mcpServer = setupMcpServer();
-          activeServers.add(mcpServer);
-
-          const token = parsedUrl.query.token as string | undefined;
-          const endpoint = token ? `/messages?token=${token}` : '/messages';
-          
-          const transport = new SSEServerTransport(endpoint, res as any);
-          transports[transport.sessionId] = transport;
-
-          res.on('close', () => {
-            console.error(`[Forage] SSE connection closed for session ${transport.sessionId}`);
-            delete transports[transport.sessionId];
-            activeServers.delete(mcpServer);
-          });
-
-          await mcpServer.connect(transport);
-        } catch (err) {
-          console.error('[Forage] Error in SSE route:', err);
-          if (!res.headersSent) {
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: String(err) }));
-          }
+      // Handle MCP request (Streamable HTTP handles both GET/POST smoothly)
+      try {
+        await transport.handleRequest(req, res);
+      } catch (err) {
+        console.error('[Forage] Transport error:', err);
+        if (!res.headersSent) {
+          res.writeHead(500);
+          res.end(String(err));
         }
-        return;
       }
-
-      // Message Handling
-      if (pathname === '/messages' && req.method === 'POST') {
-        try {
-          const sessionId = parsedUrl.query.sessionId as string;
-          const transport = transports[sessionId];
-          if (!transport) {
-            console.error(`[Forage] Session not found: ${sessionId}`);
-            res.writeHead(404, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({
-              jsonrpc: '2.0',
-              error: { code: -32000, message: 'Session not found' },
-              id: null
-            }));
-            return;
-          }
-
-          // SSEServerTransport.handlePostMessage handles body parsing if not already parsed
-          await transport.handlePostMessage(req as any, res as any);
-        } catch (err) {
-          console.error('[Forage] Error in messages route:', err);
-          if (!res.headersSent) {
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: String(err) }));
-          }
-        }
-        return;
-      }
-
-      res.writeHead(404);
-      res.end();
     });
 
+    // Connect the server to the transport once
+    await mcpServer.connect(transport);
+
     server.listen(port, '0.0.0.0', () => {
-      console.error(`[Forage] Raw HTTP SSE MCP server on 0.0.0.0:${port}`);
+      console.error(`[Forage] Streamable HTTP MCP server on 0.0.0.0:${port}`);
     });
 
   } else {
