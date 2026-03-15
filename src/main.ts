@@ -59,6 +59,50 @@ const VERIFIED_ACTORS = new Map<string, { charge: number; unit: string; desc: st
   ['code_crafter/leads-finder', { charge: 0.25, unit: 'per_100_leads', desc: 'B2B leads with emails' }],
 ]);
 
+// ==========================================
+// FREE CREDIT SYSTEM ($1 per user)
+// ==========================================
+
+const FREE_CREDIT_USD = 1.0;
+const userCredits = new Map<string, number>();
+let currentApiToken = '';
+
+function getUserCredit(apiToken: string): number {
+  if (!userCredits.has(apiToken)) {
+    userCredits.set(apiToken, FREE_CREDIT_USD);
+  }
+  return userCredits.get(apiToken)!;
+}
+
+function applyCredit(cost: number): { charged: number; freeUsed: number; remaining: number } {
+  const apiToken = currentApiToken;
+  if (!apiToken) return { charged: cost, freeUsed: 0, remaining: 0 };
+  
+  const remaining = getUserCredit(apiToken);
+  let freeUsed = 0;
+  let charged = cost;
+
+  if (remaining > 0) {
+    freeUsed = Math.min(remaining, cost);
+    charged = cost - freeUsed;
+    const newRemaining = remaining - freeUsed;
+    userCredits.set(apiToken, Math.max(0, newRemaining));
+  }
+
+  return { charged, freeUsed, remaining: getUserCredit(apiToken) };
+}
+
+function getUserRemainingCredit(): number {
+  return getUserCredit(currentApiToken);
+}
+
+function extractToken(authHeader: string | undefined): string {
+  if (!authHeader) return '';
+  if (authHeader.startsWith('Bearer ')) return authHeader.slice(7);
+  if (authHeader.startsWith('Token ')) return authHeader.slice(6);
+  return authHeader;
+}
+
 const TOOLS = [
   // CORE TOOLS
   { name: 'search_web', description: 'Real-time web search. Use for current information, news, or when you need results stored in knowledge graph. Returns titles, URLs, snippets. Cost: $0.03', inputSchema: { type: 'object', properties: { query: { type: 'string' }, num_results: { type: 'number', default: 10 } }, required: ['query'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
@@ -169,17 +213,21 @@ async function serpSearch(query: string, num = 5): Promise<any[]> {
 // ==========================================
 
 async function handleSearchWeb({ query, num_results = 10 }: { query: string; num_results?: number }) {
-  await Actor.charge({ eventName: PRICING.SEARCH_WEB.event, count: 1 });
+  const cost = PRICING.SEARCH_WEB.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.SEARCH_WEB.event, count: 1 });
   const key = process.env.SERPAPI_KEY;
   if (!key) throw new Error('SERPAPI_KEY not configured');
   const response = await axios.get('https://serpapi.com/search', { params: { q: query, api_key: key, engine: 'google', num: Math.min(num_results, 20) }, timeout: 30000 });
   const results = response.data.organic_results?.map((r: any) => ({ title: r.title, link: r.link, snippet: r.snippet })) || [];
   graphClient.ingest('search_web', { query, results });
-  return { content: [{ type: 'text', text: JSON.stringify({ query, results, cost_usd: PRICING.SEARCH_WEB.charge }, null, 2) }] };
+  return { content: [{ type: 'text', text: JSON.stringify({ query, results, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
 }
 
 async function handleScrapePage({ url }: { url: string }) {
-  await Actor.charge({ eventName: PRICING.SCRAPE_PAGE.event, count: 1 });
+  const cost = PRICING.SCRAPE_PAGE.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.SCRAPE_PAGE.event, count: 1 });
   const jinaKey = process.env.JINA_AI_KEY;
   let content: string; let title: string;
   if (jinaKey) {
@@ -194,11 +242,13 @@ async function handleScrapePage({ url }: { url: string }) {
     title = $('title').text();
     content = ($('main, article, .content').first().text() || $('body').text()).replace(/\s+/g, ' ').trim();
   }
-  return { content: [{ type: 'text', text: JSON.stringify({ url, title, content, cost_usd: PRICING.SCRAPE_PAGE.charge }, null, 2) }] };
+  return { content: [{ type: 'text', text: JSON.stringify({ url, title, content, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
 }
 
 async function handleGetCompanyInfo({ domain, find_emails = true }: { domain: string; find_emails?: boolean }) {
-  await Actor.charge({ eventName: PRICING.GET_COMPANY_INFO.event, count: 1 });
+  const cost = PRICING.GET_COMPANY_INFO.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.GET_COMPANY_INFO.event, count: 1 });
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   let websiteData = {};
   let emailData = null;
@@ -226,11 +276,13 @@ async function handleGetCompanyInfo({ domain, find_emails = true }: { domain: st
     } catch (e) { emailData = { error: 'Email search failed' }; }
   }
   graphClient.ingest('get_company_info', { domain: cleanDomain, website: websiteData, email_intelligence: emailData });
-  return { content: [{ type: 'text', text: JSON.stringify({ domain: cleanDomain, website: websiteData, email_intelligence: emailData, cost_usd: PRICING.GET_COMPANY_INFO.charge, timestamp: new Date().toISOString() }, null, 2) }] };
+  return { content: [{ type: 'text', text: JSON.stringify({ domain: cleanDomain, website: websiteData, email_intelligence: emailData, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining, timestamp: new Date().toISOString() }, null, 2) }] };
 }
 
 async function handleFindEmails({ domain, limit = 10 }: { domain: string; limit?: number }) {
-  await Actor.charge({ eventName: PRICING.FIND_EMAILS.event, count: 1 });
+  const cost = PRICING.FIND_EMAILS.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.FIND_EMAILS.event, count: 1 });
   const apolloKey = process.env.APOLLO_API_KEY;
   if (!apolloKey) throw new Error('APOLLO_API_KEY not configured');
   const { data } = await axios.post('https://api.apollo.io/v1/mixed_people/search',
@@ -249,11 +301,13 @@ async function handleFindEmails({ domain, limit = 10 }: { domain: string; limit?
     country: p.country,
   })) || [];
   graphClient.ingest('find_emails', { domain, emails });
-  return { content: [{ type: 'text', text: JSON.stringify({ domain, emails_found: emails.length, emails, cost_usd: PRICING.FIND_EMAILS.charge }, null, 2) }] };
+  return { content: [{ type: 'text', text: JSON.stringify({ domain, emails_found: emails.length, emails, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
 }
 
 async function handleFindLocalLeads({ keyword, location, radius = 5000, max_results = 20 }: any) {
-  await Actor.charge({ eventName: PRICING.FIND_LOCAL_LEADS.event, count: 1 });
+  const cost = PRICING.FIND_LOCAL_LEADS.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.FIND_LOCAL_LEADS.event, count: 1 });
   const key = process.env.GOOGLE_PLACES_API_KEY;
   if (!key) throw new Error('GOOGLE_PLACES_API_KEY not configured');
   const { data } = await axios.get('https://maps.googleapis.com/maps/api/place/textsearch/json', { params: { query: `${keyword} in ${location}`, radius, key, maxResults: max_results } });
@@ -264,13 +318,15 @@ async function handleFindLocalLeads({ keyword, location, radius = 5000, max_resu
     } catch { return { name: place.name, address: place.formatted_address, rating: place.rating, place_id: place.place_id }; }
   }));
   graphClient.ingest('find_local_leads', { keyword, location, leads });
-  return { content: [{ type: 'text', text: JSON.stringify({ keyword, location, leads, cost_usd: PRICING.FIND_LOCAL_LEADS.charge }, null, 2) }] };
+  return { content: [{ type: 'text', text: JSON.stringify({ keyword, location, leads_found: leads.length, leads, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
 }
 
 async function handleFindLeads(args: any) {
   const { job_title, location, industry, company_size, keywords, company_website, num_leads = 100, email_status = 'verified' } = args;
   const chargeUnits = Math.ceil(num_leads / 100);
-  await Actor.charge({ eventName: PRICING.FIND_LEADS.event, count: chargeUnits });
+  const cost = PRICING.FIND_LEADS.charge * chargeUnits;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.FIND_LEADS.event, count: chargeUnits });
   const run = await Actor.start('code_crafter/leads-finder', { leadsCount: Math.min(num_leads, 1000), fileName: `leads_${Date.now()}`, jobTitle: job_title, locationInclude: location || '', locationExclude: '', emailStatus: email_status, companyWebsite: company_website || '', size: company_size || '', industry: industry || '', keywords: keywords || '', revenue: '', funding: '' });
   const timeout = 5 * 60 * 1000; const startTime = Date.now(); let pollInterval = 2000;
   while (true) {
@@ -286,7 +342,7 @@ async function handleFindLeads(args: any) {
       }
       const formattedLeads = allItems.map((lead: any) => ({ name: lead.name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim(), title: lead.title || lead.jobTitle, company: lead.company || lead.organization, email: lead.email, email_status: lead.emailStatus || lead.email_verified, linkedin: lead.linkedin || lead.linkedinUrl, location: lead.location, industry: lead.industry, company_size: lead.companySize || lead.size, website: lead.website || lead.companyWebsite, phone: lead.phone }));
       graphClient.ingest('find_leads', { leads: formattedLeads });
-      return { content: [{ type: 'text', text: JSON.stringify({ query: { job_title, location, industry }, leads_found: formattedLeads.length, cost_usd: PRICING.FIND_LEADS.charge * chargeUnits, leads: formattedLeads, actor_run_id: run.id }, null, 2) }] };
+      return { content: [{ type: 'text', text: JSON.stringify({ query: { job_title, location, industry }, leads_found: formattedLeads.length, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining, leads: formattedLeads, actor_run_id: run.id }, null, 2) }] };
     }
     if (['FAILED', 'TIMED_OUT', 'ABORTED'].includes(runInfo.status!)) throw new Error(`Leads finder ${runInfo.status}`);
     await new Promise(r => setTimeout(r, pollInterval));
@@ -299,38 +355,46 @@ async function handleFindLeads(args: any) {
 // ==========================================
 
 async function handleQueryKnowledge(args: any) {
-  await Actor.charge({ eventName: PRICING.QUERY_KNOWLEDGE.event, count: 1 });
+  const cost = PRICING.QUERY_KNOWLEDGE.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.QUERY_KNOWLEDGE.event, count: 1 });
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   try {
     const res = await axios.post(`${process.env.GRAPH_API_URL}/query`, { name: args.question, type: args.entity_type !== 'any' ? args.entity_type : undefined, min_confidence: args.min_confidence || 0.0 }, { headers: { Authorization: `Bearer ${process.env.GRAPH_API_SECRET}` } });
-    return { content: [{ type: 'text', text: JSON.stringify({ question: args.question, results: res.data.entities, cost_usd: PRICING.QUERY_KNOWLEDGE.charge }, null, 2) }] };
+    return { content: [{ type: 'text', text: JSON.stringify({ question: args.question, results: res.data.entities, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
   } catch (err: any) { return { content: [{ type: 'text', text: `Graph query failed: ${err.message}` }], isError: true }; }
 }
 
 async function handleEnrichEntity(args: any) {
-  await Actor.charge({ eventName: PRICING.ENRICH_ENTITY.event, count: 1 });
+  const cost = PRICING.ENRICH_ENTITY.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.ENRICH_ENTITY.event, count: 1 });
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   try {
     const res = await axios.post(`${process.env.GRAPH_API_URL}/enrich`, { identifier: args.identifier }, { headers: { Authorization: `Bearer ${process.env.GRAPH_API_SECRET}` } });
-    return { content: [{ type: 'text', text: JSON.stringify({ identifier: args.identifier, ...res.data, cost_usd: PRICING.ENRICH_ENTITY.charge }, null, 2) }] };
+    return { content: [{ type: 'text', text: JSON.stringify({ identifier: args.identifier, ...res.data, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
   } catch (err: any) { return { content: [{ type: 'text', text: `Graph enrich failed: ${err.message}` }], isError: true }; }
 }
 
 async function handleFindConnections(args: any) {
-  await Actor.charge({ eventName: PRICING.FIND_CONNECTIONS.event, count: 1 });
+  const cost = PRICING.FIND_CONNECTIONS.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.FIND_CONNECTIONS.event, count: 1 });
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   try {
     const res = await axios.post(`${process.env.GRAPH_API_URL}/connections`, { from: args.from_entity, to: args.to_entity, max_hops: args.max_hops || 3 }, { headers: { Authorization: `Bearer ${process.env.GRAPH_API_SECRET}` } });
-    return { content: [{ type: 'text', text: JSON.stringify({ ...res.data, cost_usd: PRICING.FIND_CONNECTIONS.charge }, null, 2) }] };
+    return { content: [{ type: 'text', text: JSON.stringify({ ...res.data, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
   } catch (err: any) { return { content: [{ type: 'text', text: `Graph connections failed: ${err.message}` }], isError: true }; }
 }
 
 async function handleGetGraphStats() {
-  if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ status: 'Graph service not configured' }) }] };
+  const cost = 0;
+  const remaining = getUserRemainingCredit();
+  if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ status: 'Graph service not configured', free_credit_remaining: remaining }) }] };
   try {
     const res = await axios.get(`${process.env.GRAPH_API_URL}/stats`, { headers: { Authorization: `Bearer ${process.env.GRAPH_API_SECRET}` } });
-    return { content: [{ type: 'text', text: JSON.stringify({ knowledge_graph: res.data }, null, 2) }] };
-  } catch (err: any) { return { content: [{ type: 'text', text: JSON.stringify({ error: err.message }) }], isError: true }; }
+    return { content: [{ type: 'text', text: JSON.stringify({ knowledge_graph: res.data, cost_usd: cost, free_credit_remaining: remaining }, null, 2) }] };
+  } catch (err: any) { return { content: [{ type: 'text', text: JSON.stringify({ error: err.message, free_credit_remaining: remaining }) }], isError: true }; }
 }
 
 // ==========================================
@@ -338,17 +402,21 @@ async function handleGetGraphStats() {
 // ==========================================
 
 async function handleListVerifiedActors({ category = 'all' }: { category?: string }) {
-  await Actor.charge({ eventName: PRICING.LIST_ACTORS.event, count: 1 });
+  const cost = PRICING.LIST_ACTORS.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.LIST_ACTORS.event, count: 1 });
   const verified = Array.from(VERIFIED_ACTORS.entries()).map(([actorId, p]) => ({ actor_id: actorId, name: actorId.split('/').pop(), description: p.desc, cost_usd: p.charge, unit: p.unit }));
-  return { content: [{ type: 'text', text: JSON.stringify({ actors: category === 'all' ? verified : verified.filter(a => a.description?.includes(category)), cost_usd: PRICING.LIST_ACTORS.charge }, null, 2) }] };
+  return { content: [{ type: 'text', text: JSON.stringify({ actors: category === 'all' ? verified : verified.filter(a => a.description?.includes(category)), cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
 }
 
 async function handleGetActorSchema({ actor_id }: { actor_id: string }) {
-  await Actor.charge({ eventName: PRICING.GET_SCHEMA.event, count: 1 });
+  const cost = PRICING.GET_SCHEMA.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.GET_SCHEMA.event, count: 1 });
   const response = await axios.get(`https://api.apify.com/v2/acts/${actor_id}`, { headers: process.env.APIFY_TOKEN ? { Authorization: `Bearer ${process.env.APIFY_TOKEN}` } : {} });
   const actor = response.data.data;
   const pricing = VERIFIED_ACTORS.get(actor_id);
-  return { content: [{ type: 'text', text: JSON.stringify({ actor_id, name: actor.name, is_verified: !!pricing, cost_estimate: pricing ? { usd: pricing.charge, unit: pricing.unit } : 'Dynamic (25% markup)', input_schema: actor.input?.schema || actor.inputSchema || { warning: 'No schema', example: actor.exampleRunInput }, cost_usd: PRICING.GET_SCHEMA.charge }, null, 2) }] };
+  return { content: [{ type: 'text', text: JSON.stringify({ actor_id, name: actor.name, is_verified: !!pricing, cost_estimate: pricing ? { usd: pricing.charge, unit: pricing.unit } : 'Dynamic (25% markup)', input_schema: actor.input?.schema || actor.inputSchema || { warning: 'No schema', example: actor.exampleRunInput }, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
 }
 
 async function handleCallActor({ actor_id, input, timeout_secs = 120, max_cost_usd }: any) {
@@ -362,7 +430,8 @@ async function handleCallActor({ actor_id, input, timeout_secs = 120, max_cost_u
     } catch { estimatedCost = PRICING.OPEN_ACCESS_MINIMUM_FEE; }
   }
   if (max_cost_usd !== undefined && estimatedCost > max_cost_usd) return { content: [{ type: 'text', text: JSON.stringify({ actor_id, requested_max: max_cost_usd, estimated_cost: estimatedCost, message: 'Cost exceeds max_cost_usd' }) }], isError: true };
-  await Actor.charge({ eventName: 'call-actor', count: 1 });
+  const { charged, freeUsed, remaining } = applyCredit(estimatedCost);
+  if (charged > 0) await Actor.charge({ eventName: 'call-actor', count: 1 });
   const run = await Actor.start(actor_id, input);
   const startTime = Date.now(); const timeout = timeout_secs * 1000; let pollInterval = 2000;
   while (true) {
@@ -389,7 +458,9 @@ async function handleCallActor({ actor_id, input, timeout_secs = 120, max_cost_u
 // ==========================================
 
 async function handleSkillCompanyDossier({ domain }: { domain: string }) {
-  await Actor.charge({ eventName: PRICING.SKILL_COMPANY_DOSSIER.event, count: 1 });
+  const cost = PRICING.SKILL_COMPANY_DOSSIER.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_COMPANY_DOSSIER.event, count: 1 });
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   const apolloKey = process.env.APOLLO_API_KEY;
   const [websiteRaw, emailsRaw] = await Promise.allSettled([
@@ -403,13 +474,15 @@ async function handleSkillCompanyDossier({ domain }: { domain: string }) {
   const website = websiteRaw.status === 'fulfilled' ? { title: websiteRaw.value.data.split('\n')[0]?.replace(/^Title: /, ''), summary: websiteRaw.value.data.split('\n').slice(1).join(' ').substring(0, 800) } : { error: 'Could not fetch' };
   const emailData = emailsRaw.status === 'fulfilled' ? emailsRaw.value.data.people : null;
   const contacts = emailData?.slice(0, 10).map((p: any) => ({ name: `${p.first_name || ''} ${p.last_name || ''}`.trim(), email: p.email, title: p.title, seniority: p.seniority, department: p.departments?.[0], linkedin: p.linkedin_url })) || [];
-  const dossier = { domain: cleanDomain, website_summary: website, key_contacts: contacts, cost_usd: PRICING.SKILL_COMPANY_DOSSIER.charge, generated_at: new Date().toISOString() };
+  const dossier = { domain: cleanDomain, website_summary: website, key_contacts: contacts, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining, generated_at: new Date().toISOString() };
   graphClient.ingest('skill_company_dossier', dossier);
   return { content: [{ type: 'text', text: JSON.stringify(dossier, null, 2) }] };
 }
 
 async function handleSkillProspectCompany({ domain, seniority = 'senior,director,vp,c_suite' }: any) {
-  await Actor.charge({ eventName: PRICING.SKILL_PROSPECT_COMPANY.event, count: 1 });
+  const cost = PRICING.SKILL_PROSPECT_COMPANY.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_PROSPECT_COMPANY.event, count: 1 });
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   const apolloKey = process.env.APOLLO_API_KEY;
   if (!apolloKey) throw new Error('APOLLO_API_KEY not configured');
@@ -422,13 +495,15 @@ async function handleSkillProspectCompany({ domain, seniority = 'senior,director
     .filter((p: any) => !p.seniority || seniorityLevels.includes(p.seniority?.toLowerCase()))
     .slice(0, 15)
     .map((p: any) => ({ name: `${p.first_name || ''} ${p.last_name || ''}`.trim(), email: p.email, title: p.title, seniority: p.seniority, department: p.departments?.[0], linkedin: p.linkedin_url }));
-  const result = { domain: cleanDomain, decision_makers_found: decisionMakers.length, contacts: decisionMakers, cost_usd: PRICING.SKILL_PROSPECT_COMPANY.charge };
+  const result = { domain: cleanDomain, decision_makers_found: decisionMakers.length, contacts: decisionMakers, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
   graphClient.ingest('skill_prospect_company', result);
   return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
 }
 
 async function handleSkillOutboundList({ job_title, location, industry, company_size }: any) {
-  await Actor.charge({ eventName: PRICING.SKILL_OUTBOUND_LIST.event, count: 1 });
+  const cost = PRICING.SKILL_OUTBOUND_LIST.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_OUTBOUND_LIST.event, count: 1 });
   const run = await Actor.start('code_crafter/leads-finder', { leadsCount: 100, fileName: `outbound_${Date.now()}`, jobTitle: job_title, locationInclude: location || '', emailStatus: 'verified', size: company_size || '', industry: industry || '' });
   const timeout = 8 * 60 * 1000; const startTime = Date.now(); let pollInterval = 3000;
   while (true) {
@@ -439,7 +514,7 @@ async function handleSkillOutboundList({ job_title, location, industry, company_
       const result = await Actor.apifyClient.dataset(runInfo.defaultDatasetId!).listItems({ limit: 100 });
       const leads = result.items.map((lead: any) => ({ name: `${lead.first_name || ''} ${lead.last_name || ''}`.trim() || lead.name, title: lead.title || lead.jobTitle, company: lead.company || lead.organization, email: lead.email, email_verified: lead.emailStatus === 'verified', linkedin: lead.linkedin || lead.linkedinUrl, location: lead.location, company_size: lead.companySize, website: lead.website, phone: lead.phone }));
       graphClient.ingest('skill_outbound_list', { leads });
-      return { content: [{ type: 'text', text: JSON.stringify({ job_title, location, industry, total_leads: leads.length, verified_emails: leads.filter((l: any) => l.email_verified).length, leads, cost_usd: PRICING.SKILL_OUTBOUND_LIST.charge, export_ready: true }, null, 2) }] };
+      return { content: [{ type: 'text', text: JSON.stringify({ job_title, location, industry, total_leads: leads.length, verified_emails: leads.filter((l: any) => l.email_verified).length, leads, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining, export_ready: true }, null, 2) }] };
     }
     if (['FAILED', 'ABORTED', 'TIMED_OUT'].includes(runInfo.status!)) throw new Error(`Leads actor ${runInfo.status}`);
     await new Promise(r => setTimeout(r, pollInterval));
@@ -448,7 +523,9 @@ async function handleSkillOutboundList({ job_title, location, industry, company_
 }
 
 async function handleSkillLocalMarketMap({ business_type, location }: any) {
-  await Actor.charge({ eventName: PRICING.SKILL_LOCAL_MARKET_MAP.event, count: 1 });
+  const cost = PRICING.SKILL_LOCAL_MARKET_MAP.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_LOCAL_MARKET_MAP.event, count: 1 });
   const key = process.env.GOOGLE_PLACES_API_KEY;
   if (!key) throw new Error('GOOGLE_PLACES_API_KEY not configured');
   const allResults: any[] = []; let pageToken: string | undefined;
@@ -466,13 +543,15 @@ async function handleSkillLocalMarketMap({ business_type, location }: any) {
     pageToken = data.next_page_token;
     if (pageToken) await new Promise(r => setTimeout(r, 2000));
   } while (pageToken && allResults.length < 60);
-  const result = { business_type, location, total_found: allResults.length, businesses: allResults, cost_usd: PRICING.SKILL_LOCAL_MARKET_MAP.charge };
+  const result = { business_type, location, total_found: allResults.length, businesses: allResults, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
   graphClient.ingest('skill_local_market_map', result);
   return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
 }
 
 async function handleSkillCompetitorIntel({ competitor_url, focus = 'both' }: any) {
-  await Actor.charge({ eventName: PRICING.SKILL_COMPETITOR_INTEL.event, count: 1 });
+  const cost = PRICING.SKILL_COMPETITOR_INTEL.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_COMPETITOR_INTEL.event, count: 1 });
   const competitorName = competitor_url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0].split('.')[0];
   const searchQueries: string[] = [];
   if (focus === 'pricing' || focus === 'both') searchQueries.push(`${competitorName} pricing plans`);
@@ -490,13 +569,15 @@ async function handleSkillCompetitorIntel({ competitor_url, focus = 'both' }: an
   const pricingPages = pages_data.filter(p => p.url.includes('pricing') || p.url.includes('plans') || p.url.includes('cost'));
   const featurePages = pages_data.filter(p => p.url.includes('features') || p.url.includes('product') || p.url.includes('solutions'));
   const reviewPages = pages_data.filter(p => p.url.includes('g2.com') || p.url.includes('capterra') || p.url.includes('trustpilot'));
-  const result = { competitor: competitor_url, competitor_name: competitorName, focus, summary: { homepage: homepagePage?.content?.substring(0, 500) || null, pricing_pages_found: pricingPages.length, feature_pages_found: featurePages.length, review_pages_found: reviewPages.length }, pricing_data: pricingPages.map(p => ({ url: p.url, content: p.content })), feature_data: featurePages.map(p => ({ url: p.url, content: p.content })), review_data: reviewPages.map(p => ({ url: p.url, content: p.content })), all_pages_scraped: pages_data.length, cost_usd: PRICING.SKILL_COMPETITOR_INTEL.charge };
+  const result = { competitor: competitor_url, competitor_name: competitorName, focus, summary: { homepage: homepagePage?.content?.substring(0, 500) || null, pricing_pages_found: pricingPages.length, feature_pages_found: featurePages.length, review_pages_found: reviewPages.length }, pricing_data: pricingPages.map(p => ({ url: p.url, content: p.content })), feature_data: featurePages.map(p => ({ url: p.url, content: p.content })), review_data: reviewPages.map(p => ({ url: p.url, content: p.content })), all_pages_scraped: pages_data.length, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
   graphClient.ingest('skill_competitor_intel', result);
   return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
 }
 
 async function handleSkillDecisionMakerFinder({ domain, departments = 'sales,marketing,engineering,executive' }: any) {
-  await Actor.charge({ eventName: PRICING.SKILL_DECISION_MAKER.event, count: 1 });
+  const cost = PRICING.SKILL_DECISION_MAKER.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_DECISION_MAKER.event, count: 1 });
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   const apolloKey = process.env.APOLLO_API_KEY;
   if (!apolloKey) throw new Error('APOLLO_API_KEY not configured');
@@ -510,7 +591,7 @@ async function handleSkillDecisionMakerFinder({ domain, departments = 'sales,mar
     .sort((a: any, b: any) => { const s = ['c_suite', 'vp', 'director', 'senior', 'junior']; return s.indexOf(a.seniority) - s.indexOf(b.seniority); })
     .slice(0, 20)
     .map((p: any) => ({ name: `${p.first_name || ''} ${p.last_name || ''}`.trim(), email: p.email, title: p.title, seniority: p.seniority, department: p.departments?.[0], linkedin: p.linkedin_url }));
-  const result = { domain: cleanDomain, contacts_found: contacts.length, contacts, cost_usd: PRICING.SKILL_DECISION_MAKER.charge };
+  const result = { domain: cleanDomain, contacts_found: contacts.length, contacts, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
   graphClient.ingest('skill_decision_maker_finder', result);
   return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
 }
@@ -520,7 +601,9 @@ async function handleSkillDecisionMakerFinder({ domain, departments = 'sales,mar
 // ==========================================
 
 async function handleSkillCompetitorAds({ competitor_name, competitor_domain }: any) {
-  await Actor.charge({ eventName: PRICING.SKILL_COMPETITOR_ADS.event, count: 1 });
+  const cost = PRICING.SKILL_COMPETITOR_ADS.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_COMPETITOR_ADS.event, count: 1 });
   const fbLibraryUrl = `https://www.facebook.com/ads/library/?active_status=active&ad_type=ALL&country=ALL&q=${encodeURIComponent(competitor_name)}&search_type=keyword_unordered`;
   const googleTransparencyUrl = `https://adstransparency.google.com/?region=anywhere&advertiserName=${encodeURIComponent(competitor_name)}`;
   const [fbContent, googleContent] = await Promise.all([jinaFetch(fbLibraryUrl, 2000), jinaFetch(googleTransparencyUrl, 2000)]);
@@ -528,13 +611,15 @@ async function handleSkillCompetitorAds({ competitor_name, competitor_domain }: 
   await Promise.allSettled([`${competitor_name} facebook ad examples copy`, `${competitor_name} google ads strategy`, `${competitor_name} best performing ads`].map(async (q) => { const results = await serpSearch(q, 3); results.slice(0, 2).forEach((r: any) => adSearchResults.push({ query: q, title: r.title, url: r.link, snippet: r.snippet })); }));
   const landingPages: any[] = [];
   await Promise.allSettled(adSearchResults.filter(r => r.url && !r.url.includes('google') && !r.url.includes('facebook')).slice(0, 3).map(async (r) => { const content = await jinaFetch(r.url, 1500); if (content) landingPages.push({ url: r.url, content }); }));
-  const result = { competitor: competitor_name, domain: competitor_domain || 'not provided', facebook_ad_library: { url: fbLibraryUrl, content: fbContent || 'Visit URL manually to see active ads' }, google_ads_transparency: { url: googleTransparencyUrl, content: googleContent || 'Visit URL manually to see active Google ads' }, ad_intelligence: adSearchResults, landing_pages: landingPages, manual_links: [fbLibraryUrl, googleTransparencyUrl], cost_usd: PRICING.SKILL_COMPETITOR_ADS.charge };
+  const result = { competitor: competitor_name, domain: competitor_domain || 'not provided', facebook_ad_library: { url: fbLibraryUrl, content: fbContent || 'Visit URL manually to see active ads' }, google_ads_transparency: { url: googleTransparencyUrl, content: googleContent || 'Visit URL manually to see active Google ads' }, ad_intelligence: adSearchResults, landing_pages: landingPages, manual_links: [fbLibraryUrl, googleTransparencyUrl], cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
   graphClient.ingest('skill_competitor_ads', result);
   return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
 }
 
 async function handleSkillJobSignals({ company_name, domain }: any) {
-  await Actor.charge({ eventName: PRICING.SKILL_JOB_SIGNALS.event, count: 1 });
+  const cost = PRICING.SKILL_JOB_SIGNALS.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_JOB_SIGNALS.event, count: 1 });
   const allResults: any[] = [];
   await Promise.allSettled([
     `${company_name} jobs site:linkedin.com OR site:greenhouse.io OR site:lever.co OR site:jobs.ashbyhq.com`,
@@ -551,13 +636,15 @@ async function handleSkillJobSignals({ company_name, domain }: any) {
   }
   const jobPages: any[] = [];
   await Promise.allSettled(allResults.filter(r => r.url && (r.url.includes('greenhouse') || r.url.includes('lever') || r.url.includes('ashby'))).slice(0, 3).map(async (r) => { const content = await jinaFetch(r.url, 2000); if (content) jobPages.push({ url: r.url, content }); }));
-  const result = { company: company_name, domain: domain || 'not provided', careers_page: careersContent, job_listings_found: allResults.length, search_results: allResults, job_pages_scraped: jobPages, signals_to_watch: ['New departments = strategic expansion', 'Engineering spike = product build phase', 'Sales + marketing = growth mode', 'Infra / DevOps = scaling', 'AI / ML roles = technology pivot'], cost_usd: PRICING.SKILL_JOB_SIGNALS.charge };
+  const result = { company: company_name, domain: domain || 'not provided', careers_page: careersContent, job_listings_found: allResults.length, search_results: allResults, job_pages_scraped: jobPages, signals_to_watch: ['New departments = strategic expansion', 'Engineering spike = product build phase', 'Sales + marketing = growth mode', 'Infra / DevOps = scaling', 'AI / ML roles = technology pivot'], cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
   graphClient.ingest('skill_job_signals', { company: company_name, job_listings: allResults });
   return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
 }
 
 async function handleSkillTechStack({ domain }: any) {
-  await Actor.charge({ eventName: PRICING.SKILL_TECH_STACK.event, count: 1 });
+  const cost = PRICING.SKILL_TECH_STACK.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_TECH_STACK.event, count: 1 });
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   const [builtWithContent, homepageContent, jobsContent] = await Promise.all([
     jinaFetch(`https://builtwith.com/${cleanDomain}`, 3000),
@@ -567,13 +654,15 @@ async function handleSkillTechStack({ domain }: any) {
   const stackResults = await serpSearch(`${cleanDomain} tech stack engineering blog`, 5);
   const engBlogPages: any[] = [];
   await Promise.allSettled(stackResults.filter((r: any) => r.link && (r.link.includes('engineering') || r.link.includes('tech') || r.link.includes('blog'))).slice(0, 2).map(async (r: any) => { const content = await jinaFetch(r.link, 2000); if (content) engBlogPages.push({ url: r.link, content }); }));
-  const result = { domain: cleanDomain, builtwith_data: builtWithContent, homepage_signals: homepageContent?.substring(0, 1000) || null, jobs_tech_mentions: jobsContent?.substring(0, 1000) || null, engineering_blog: engBlogPages, search_results: stackResults.slice(0, 5).map((r: any) => ({ title: r.title, url: r.link, snippet: r.snippet })), cost_usd: PRICING.SKILL_TECH_STACK.charge };
+  const result = { domain: cleanDomain, builtwith_data: builtWithContent, homepage_signals: homepageContent?.substring(0, 1000) || null, jobs_tech_mentions: jobsContent?.substring(0, 1000) || null, engineering_blog: engBlogPages, search_results: stackResults.slice(0, 5).map((r: any) => ({ title: r.title, url: r.link, snippet: r.snippet })), cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
   graphClient.ingest('skill_tech_stack', { domain: cleanDomain });
   return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
 }
 
 async function handleSkillFundingIntel({ company_name, domain }: any) {
-  await Actor.charge({ eventName: PRICING.SKILL_FUNDING_INTEL.event, count: 1 });
+  const cost = PRICING.SKILL_FUNDING_INTEL.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_FUNDING_INTEL.event, count: 1 });
   const allResults: any[] = [];
   await Promise.allSettled([
     `${company_name} funding round raised 2024 2025`,
@@ -585,13 +674,15 @@ async function handleSkillFundingIntel({ company_name, domain }: any) {
   const crunchbaseContent = await jinaFetch(crunchbaseUrl, 2500);
   const newsPages: any[] = [];
   await Promise.allSettled(allResults.filter(r => r.url && (r.url.includes('techcrunch') || r.url.includes('businesswire') || r.url.includes('prnewswire'))).slice(0, 3).map(async (r) => { const content = await jinaFetch(r.url, 2000); if (content) newsPages.push({ url: r.url, content }); }));
-  const result = { company: company_name, domain: domain || 'not provided', crunchbase: { url: crunchbaseUrl, content: crunchbaseContent }, funding_search_results: allResults, news_articles: newsPages, cost_usd: PRICING.SKILL_FUNDING_INTEL.charge };
+  const result = { company: company_name, domain: domain || 'not provided', crunchbase: { url: crunchbaseUrl, content: crunchbaseContent }, funding_search_results: allResults, news_articles: newsPages, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
   graphClient.ingest('skill_funding_intel', { company: company_name });
   return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
 }
 
 async function handleSkillSocialProof({ company_name, domain }: any) {
-  await Actor.charge({ eventName: PRICING.SKILL_SOCIAL_PROOF.event, count: 1 });
+  const cost = PRICING.SKILL_SOCIAL_PROOF.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_SOCIAL_PROOF.event, count: 1 });
   const slug = company_name.toLowerCase().replace(/\s+/g, '-');
   const reviewPages: any[] = [];
   await Promise.allSettled([
@@ -608,13 +699,15 @@ async function handleSkillSocialProof({ company_name, domain }: any) {
       if (testimonialPage) break;
     }
   }
-  const result = { company: company_name, review_platforms: reviewPages, own_site_testimonials: testimonialPage, search_results: testimonialResults.slice(0, 5).map((r: any) => ({ title: r.title, url: r.link, snippet: r.snippet })), platforms_found: reviewPages.map(r => r.source), cost_usd: PRICING.SKILL_SOCIAL_PROOF.charge };
+  const result = { company: company_name, review_platforms: reviewPages, own_site_testimonials: testimonialPage, search_results: testimonialResults.slice(0, 5).map((r: any) => ({ title: r.title, url: r.link, snippet: r.snippet })), platforms_found: reviewPages.map(r => r.source), cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
   graphClient.ingest('skill_social_proof', { company: company_name, reviews_found: reviewPages.length });
   return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
 }
 
 async function handleSkillMarketMap({ market, max_competitors = 10 }: any) {
-  await Actor.charge({ eventName: PRICING.SKILL_MARKET_MAP.event, count: 1 });
+  const cost = PRICING.SKILL_MARKET_MAP.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_MARKET_MAP.event, count: 1 });
   const allResults: any[] = [];
   await Promise.allSettled([
     `best ${market} tools software`,
@@ -625,13 +718,15 @@ async function handleSkillMarketMap({ market, max_competitors = 10 }: any) {
   const comparisonPages: any[] = [];
   await Promise.allSettled(allResults.filter(r => r.url && (r.url.includes('g2.com') || r.url.includes('capterra') || r.title?.toLowerCase().includes('best') || r.title?.toLowerCase().includes('top'))).slice(0, 4).map(async (r) => { const content = await jinaFetch(r.url, 3000); if (content) comparisonPages.push({ url: r.url, content }); }));
   const pricingResults = await serpSearch(`${market} pricing comparison 2024 2025`, 5);
-  const result = { market, search_results: allResults.slice(0, 15), comparison_pages: comparisonPages, pricing_comparison_results: pricingResults.slice(0, 5).map((r: any) => ({ title: r.title, url: r.link, snippet: r.snippet })), note: 'Use comparison_pages to extract player names, positioning and pricing tiers', cost_usd: PRICING.SKILL_MARKET_MAP.charge };
+  const result = { market, search_results: allResults.slice(0, 15), comparison_pages: comparisonPages, pricing_comparison_results: pricingResults.slice(0, 5).map((r: any) => ({ title: r.title, url: r.link, snippet: r.snippet })), note: 'Use comparison_pages to extract player names, positioning and pricing tiers', cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
   graphClient.ingest('skill_market_map', { market });
   return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
 }
 
 async function handleSkillKasprEnrich({ linkedin_id, prospect_name }: any) {
-  await Actor.charge({ eventName: PRICING.SKILL_KASPR_ENRICH.event, count: 1 });
+  const cost = PRICING.SKILL_KASPR_ENRICH.charge;
+  const { charged, freeUsed, remaining } = applyCredit(cost);
+  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_KASPR_ENRICH.event, count: 1 });
   const apiKey = process.env.KASPR_API_KEY;
   if (!apiKey) throw new Error("KASPR_API_KEY is not configured in Actor environment");
 
@@ -657,7 +752,9 @@ async function handleSkillKasprEnrich({ linkedin_id, prospect_name }: any) {
     linkedin_id,
     kaspr_data: data,
     status: res.status,
-    cost_usd: PRICING.SKILL_KASPR_ENRICH.charge
+    cost_usd: cost,
+    free_credit_used: freeUsed,
+    free_credit_remaining: remaining
   };
 
   graphClient.ingest('skill_kaspr_enrich', { prospect: prospect_name, id: linkedin_id });
@@ -687,6 +784,9 @@ async function main() {
 
     app.all('*', async (req: any, res: any) => {
       try {
+        // Extract API token from Authorization header
+        currentApiToken = extractToken(req.headers['authorization']);
+
         // New session: POST with no mcp-session-id header
         if (req.method === 'POST' && !req.headers['mcp-session-id']) {
           const transport = new StreamableHTTPServerTransport({
