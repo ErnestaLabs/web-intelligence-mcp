@@ -669,77 +669,92 @@ async function handleSkillKasprEnrich({ linkedin_id, prospect_name }: any) {
 
 async function main() {
   const standbyPort = process.env.ACTOR_STANDBY_PORT || process.env.ACTOR_WEB_SERVER_PORT;
-  console.error(`[Forage] STANDBY_PORT: ${standbyPort}`);
-  console.error(`[Forage] WEB_SERVER_URL: ${process.env.ACTOR_WEB_SERVER_URL}`);
+  const port = parseInt(standbyPort || process.env.PORT || '3000');
   const useHttp = standbyPort || process.env.TRANSPORT === 'http';
 
-  // Keep track of all active servers so we can close them gracefully
   const activeServers = new Set<Server>();
+  const transports: Record<string, SSEServerTransport> = {};
 
   if (useHttp) {
-    const port = parseInt(standbyPort || process.env.PORT || '3000');
     const http = await import('http');
-    const express = await import('express');
-    const app = express.default();
+    const url = await import('url');
 
-    // Track active transports by session for message routing
-    const transports: Record<string, SSEServerTransport> = {};
+    const server = http.createServer(async (req, res) => {
+      const parsedUrl = url.parse(req.url || '', true);
+      const pathname = parsedUrl.pathname;
 
-    // SSE endpoint — client connects here to establish the event stream
-    app.get(['/sse', '/mcp'], async (req: any, res: any) => {
-      try {
-        console.error('[Forage] SSE connection from', req.ip);
-        const mcpServer = setupMcpServer();
-        activeServers.add(mcpServer);
-        
-        const token = req.query.token as string | undefined;
-        const endpoint = token ? `/messages?token=${token}` : '/messages';
-        const transport = new SSEServerTransport(endpoint, res);
-        
-        transports[transport.sessionId] = transport;
-        
-        res.on('close', () => { 
-          delete transports[transport.sessionId]; 
-          activeServers.delete(mcpServer);
-        });
-        
-        await mcpServer.connect(transport);
-      } catch (err) {
-        console.error('[Forage] Error in /sse route:', err);
-        res.status(500).json({ error: String(err) });
+      // Health Check
+      if (pathname === '/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'ok', server: 'forage', tools: TOOLS.length }));
+        return;
       }
-    });
 
-    // Make sure JSON is parsed for POST requests, after SSE is bound
-    app.use(express.default.json());
+      // SSE Handshake
+      if (pathname === '/sse' || pathname === '/mcp') {
+        try {
+          console.error(`[Forage] SSE connection from ${req.socket.remoteAddress}`);
+          const mcpServer = setupMcpServer();
+          activeServers.add(mcpServer);
 
-    // Messages endpoint — client POSTs JSON-RPC messages here
-    app.post('/messages', async (req: any, res: any) => {
-      try {
-        // SSEClientTransport appends sessionId to the URL automatically based on the endpoint we provided
-        const sessionId = req.query.sessionId as string;
-        const transport = transports[sessionId];
-        if (!transport) {
-          res.status(404).json({
-            jsonrpc: '2.0',
-            error: { code: -32000, message: 'Not Found: Server is not connected to the client.' },
-            id: null
+          const token = parsedUrl.query.token as string | undefined;
+          const endpoint = token ? `/messages?token=${token}` : '/messages';
+          
+          const transport = new SSEServerTransport(endpoint, res as any);
+          transports[transport.sessionId] = transport;
+
+          res.on('close', () => {
+            console.error(`[Forage] SSE connection closed for session ${transport.sessionId}`);
+            delete transports[transport.sessionId];
+            activeServers.delete(mcpServer);
           });
-          return;
+
+          await mcpServer.connect(transport);
+        } catch (err) {
+          console.error('[Forage] Error in SSE route:', err);
+          if (!res.headersSent) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: String(err) }));
+          }
         }
-        await transport.handlePostMessage(req, res);
-      } catch (err) {
-        console.error('[Forage] Error in /messages route:', err);
-        res.status(500).json({ error: String(err) });
+        return;
       }
+
+      // Message Handling
+      if (pathname === '/messages' && req.method === 'POST') {
+        try {
+          const sessionId = parsedUrl.query.sessionId as string;
+          const transport = transports[sessionId];
+          if (!transport) {
+            console.error(`[Forage] Session not found: ${sessionId}`);
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              jsonrpc: '2.0',
+              error: { code: -32000, message: 'Session not found' },
+              id: null
+            }));
+            return;
+          }
+
+          // SSEServerTransport.handlePostMessage handles body parsing if not already parsed
+          await transport.handlePostMessage(req as any, res as any);
+        } catch (err) {
+          console.error('[Forage] Error in messages route:', err);
+          if (!res.headersSent) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: String(err) }));
+          }
+        }
+        return;
+      }
+
+      res.writeHead(404);
+      res.end();
     });
 
-    app.get('/health', (_req: any, res: any) =>
-      res.json({ status: 'ok', server: 'forage', tools: TOOLS.length }));
-
-    // Bind to 0.0.0.0 — required for Apify Standby mode
-    http.createServer(app).listen(port, '0.0.0.0', () =>
-      console.error(`[Forage] SSE MCP server on 0.0.0.0:${port}`));
+    server.listen(port, '0.0.0.0', () => {
+      console.error(`[Forage] Raw HTTP SSE MCP server on 0.0.0.0:${port}`);
+    });
 
   } else {
     const mcpServer = setupMcpServer();
@@ -748,7 +763,6 @@ async function main() {
     console.error('[Forage] Gateway on stdio');
   }
 
-  // Handle graceful shutdown
   const shutdown = async () => {
     for (const server of activeServers) {
       await server.close();
