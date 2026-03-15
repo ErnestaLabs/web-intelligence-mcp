@@ -669,63 +669,78 @@ async function handleSkillKasprEnrich({ linkedin_id, prospect_name }: any) {
 
 async function main() {
   const standbyPort = process.env.ACTOR_STANDBY_PORT || process.env.ACTOR_WEB_SERVER_PORT;
-  const port = parseInt(standbyPort || process.env.PORT || '3000');
+  console.error(`[Forage] STANDBY_PORT: ${standbyPort}`);
+  console.error(`[Forage] WEB_SERVER_URL: ${process.env.ACTOR_WEB_SERVER_URL}`);
   const useHttp = standbyPort || process.env.TRANSPORT === 'http';
 
-  const activeServers = new Set<Server>();
-
   if (useHttp) {
+    const port = parseInt(standbyPort || process.env.PORT || '3000');
     const http = await import('http');
-    
-    // Create the modern Streamable HTTP transport
-    const transport = new StreamableHTTPServerTransport();
-    const mcpServer = setupMcpServer();
-    activeServers.add(mcpServer);
+    const express = await import('express');
+    const { StreamableHTTPServerTransport } = await import('@modelcontextprotocol/sdk/server/streamableHttp.js');
+    const app = express.default();
+    app.use(express.default.json());
 
-    const server = http.createServer(async (req, res) => {
-      // Basic Health Check
-      if (req.url === '/health') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok', server: 'forage', tools: TOOLS.length }));
-        return;
-      }
+    // Streamable HTTP — one transport per session, stored by session ID
+    const transports = new Map<string, StreamableHTTPServerTransport>();
 
-      // Handle MCP request (Streamable HTTP handles both GET/POST smoothly)
+    app.all('/', async (req: any, res: any) => {
       try {
-        await transport.handleRequest(req, res);
-      } catch (err) {
-        console.error('[Forage] Transport error:', err);
-        if (!res.headersSent) {
-          res.writeHead(500);
-          res.end(String(err));
+        // New session: POST with no mcp-session-id header
+        if (req.method === 'POST' && !req.headers['mcp-session-id']) {
+          const transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: () => crypto.randomUUID(),
+            onsessioninitialized: (sessionId) => {
+              transports.set(sessionId, transport);
+            },
+          });
+          transport.onclose = () => {
+            if (transport.sessionId) transports.delete(transport.sessionId);
+          };
+          const mcpServer = setupMcpServer();
+          await mcpServer.connect(transport);
+          await transport.handleRequest(req, res, req.body);
+          return;
         }
+
+        // Existing session
+        const sessionId = req.headers['mcp-session-id'] as string;
+        const transport = sessionId ? transports.get(sessionId) : undefined;
+        if (!transport) {
+          res.status(404).json({ error: 'Session not found' });
+          return;
+        }
+        await transport.handleRequest(req, res, req.body);
+      } catch (err) {
+        console.error('[Forage] Error:', err);
+        if (!res.headersSent) res.status(500).json({ error: String(err) });
       }
     });
 
-    // Connect the server to the transport once
-    await mcpServer.connect(transport);
+    app.get('/health', (_req: any, res: any) =>
+      res.json({ status: 'ok', server: 'forage', transport: 'streamable-http', tools: TOOLS.length }));
 
-    server.listen(port, '0.0.0.0', () => {
-      console.error(`[Forage] Streamable HTTP MCP server on 0.0.0.0:${port}`);
-    });
+    // Keepalive — prevents Apify standby idle timeout from killing the container
+    const webServerUrl = process.env.ACTOR_WEB_SERVER_URL;
+    if (webServerUrl) {
+      setInterval(async () => {
+        try {
+          await fetch(`${webServerUrl}/health`);
+        } catch { /* silent */ }
+      }, 3 * 60 * 1000); // every 3 minutes
+    }
+
+    http.createServer(app).listen(port, '0.0.0.0', () =>
+      console.error(`[Forage] Streamable HTTP MCP server on 0.0.0.0:${port}`));
 
   } else {
     const mcpServer = setupMcpServer();
-    activeServers.add(mcpServer);
     await mcpServer.connect(new StdioServerTransport());
     console.error('[Forage] Gateway on stdio');
   }
 
-  const shutdown = async () => {
-    for (const server of activeServers) {
-      await server.close();
-    }
-    await Actor.exit();
-    process.exit(0);
-  };
-
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  process.on('SIGTERM', async () => { await Actor.exit(); process.exit(0); });
+  process.on('SIGINT',  async () => { await Actor.exit(); process.exit(0); });
 }
 
 main().catch(console.error);
