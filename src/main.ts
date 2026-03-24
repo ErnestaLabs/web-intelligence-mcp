@@ -338,7 +338,7 @@ async function handleFindEmails({ domain, limit = 10 }: { domain: string; limit?
         { headers: { 'Content-Type': 'application/json', 'Accept': 'application/json, text/event-stream' }, timeout: 15000 }
       );
       
-      const mcpSession = initRes.headers.get('mcp-session-id');
+      const mcpSession = initRes.headers['mcp-session-id'] as string;
       if (mcpSession) {
         const toolRes = await axios.post(`${mcpUrl}?token=${mcpToken}`,
           { jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'find_emails', arguments: { domain, limit } } },
