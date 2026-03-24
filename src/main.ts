@@ -109,11 +109,12 @@ function getUserRemainingCredit(): number {
   return getUserCredit(currentApiToken);
 }
 
-// Skip charging if running as the actor owner
+// Skip charging — billing not configured on free tier
 async function chargeIfNotOwner(eventName: string, count: number = 1) {
-  const isOwner = process.env.APIFY_USER_ID === process.env.ACTOR_OWNER_ID;
-  if (!isOwner) {
+  try {
     await Actor.charge({ eventName, count });
+  } catch (e: any) {
+    // Silently ignore 403 (billing not set up)
   }
 }
 
