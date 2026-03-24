@@ -109,6 +109,14 @@ function getUserRemainingCredit(): number {
   return getUserCredit(currentApiToken);
 }
 
+// Skip charging if running as the actor owner
+async function chargeIfNotOwner(eventName: string, count: number = 1) {
+  const isOwner = process.env.APIFY_USER_ID === process.env.ACTOR_OWNER_ID;
+  if (!isOwner) {
+    await Actor.charge({ eventName, count });
+  }
+}
+
 function extractToken(authHeader: string | undefined): string {
   if (!authHeader) return '';
   if (authHeader.startsWith('Bearer ')) return authHeader.slice(7);
@@ -252,7 +260,7 @@ async function serpSearch(query: string, num = 5): Promise<any[]> {
 async function handleSearchWeb({ query, num_results = 10 }: { query: string; num_results?: number }) {
   const cost = PRICING.SEARCH_WEB.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.SEARCH_WEB.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.SEARCH_WEB.event, 1);
   const key = process.env.SERPAPI_KEY;
   if (!key) throw new Error('SERPAPI_KEY not configured');
   const response = await axios.get('https://serpapi.com/search', { params: { q: query, api_key: key, engine: 'google', num: Math.min(num_results, 20) }, timeout: 30000 });
@@ -264,7 +272,7 @@ async function handleSearchWeb({ query, num_results = 10 }: { query: string; num
 async function handleScrapePage({ url }: { url: string }) {
   const cost = PRICING.SCRAPE_PAGE.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.SCRAPE_PAGE.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.SCRAPE_PAGE.event, 1);
   const jinaKey = process.env.JINA_AI_KEY;
   let content: string; let title: string;
   if (jinaKey) {
@@ -285,7 +293,7 @@ async function handleScrapePage({ url }: { url: string }) {
 async function handleGetCompanyInfo({ domain, find_emails = true }: { domain: string; find_emails?: boolean }) {
   const cost = PRICING.GET_COMPANY_INFO.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.GET_COMPANY_INFO.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.GET_COMPANY_INFO.event, 1);
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   let websiteData = {};
   let emailData = null;
@@ -321,7 +329,7 @@ async function handleFindEmails({ domain, limit = 10 }: { domain: string; limit?
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) {
     try {
-      await Actor.charge({ eventName: PRICING.FIND_EMAILS.event, count: 1 });
+      await chargeIfNotOwner(PRICING.FIND_EMAILS.event, 1);
     } catch (e) {
       console.error('Charging error:', e);
     }
@@ -372,7 +380,7 @@ async function handleFindEmails({ domain, limit = 10 }: { domain: string; limit?
 async function handleFindLocalLeads({ keyword, location, radius = 5000, max_results = 20 }: any) {
   const cost = PRICING.FIND_LOCAL_LEADS.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.FIND_LOCAL_LEADS.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.FIND_LOCAL_LEADS.event, 1);
   const key = process.env.GOOGLE_PLACES_API_KEY;
   if (!key) throw new Error('GOOGLE_PLACES_API_KEY not configured');
   const { data } = await axios.get('https://maps.googleapis.com/maps/api/place/textsearch/json', { params: { query: `${keyword} in ${location}`, radius, key, maxResults: max_results } });
@@ -391,7 +399,7 @@ async function handleFindLeads(args: any) {
   const chargeUnits = Math.ceil(num_leads / 100);
   const cost = PRICING.FIND_LEADS.charge * chargeUnits;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.FIND_LEADS.event, count: chargeUnits });
+  if (charged > 0) await chargeIfNotOwner(PRICING.FIND_LEADS.event, chargeUnits);
   const run = await Actor.start('code_crafter/leads-finder', { leadsCount: Math.min(num_leads, 1000), fileName: `leads_${Date.now()}`, jobTitle: job_title, locationInclude: location || '', locationExclude: '', emailStatus: email_status, companyWebsite: company_website || '', size: company_size || '', industry: industry || '', keywords: keywords || '', revenue: '', funding: '' });
   const timeout = 5 * 60 * 1000; const startTime = Date.now(); let pollInterval = 2000;
   while (true) {
@@ -422,7 +430,7 @@ async function handleFindLeads(args: any) {
 async function handleQueryKnowledge(args: any) {
   const cost = PRICING.QUERY_KNOWLEDGE.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.QUERY_KNOWLEDGE.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.QUERY_KNOWLEDGE.event, 1);
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   const graphUrl = process.env.GRAPH_API_URL.replace(/\/$/, '');
   try {
@@ -434,7 +442,7 @@ async function handleQueryKnowledge(args: any) {
 async function handleEnrichEntity(args: any) {
   const cost = PRICING.ENRICH_ENTITY.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.ENRICH_ENTITY.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.ENRICH_ENTITY.event, 1);
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   const graphUrl = process.env.GRAPH_API_URL.replace(/\/$/, '');
   try {
@@ -446,7 +454,7 @@ async function handleEnrichEntity(args: any) {
 async function handleFindConnections(args: any) {
   const cost = PRICING.FIND_CONNECTIONS.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.FIND_CONNECTIONS.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.FIND_CONNECTIONS.event, 1);
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   const graphUrl = process.env.GRAPH_API_URL.replace(/\/$/, '');
   try {
@@ -473,7 +481,7 @@ async function handleGetGraphStats() {
 async function handleGetClaims({ entity }: { entity: string }) {
   const cost = 0.02;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: 'get-claims', count: 1 });
+  if (charged > 0) await chargeIfNotOwner('get-claims', 1);
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   const graphUrl = process.env.GRAPH_API_URL.replace(/\/$/, '');
   try {
@@ -485,7 +493,7 @@ async function handleGetClaims({ entity }: { entity: string }) {
 async function handleAddClaim(args: { entity: string; relation: string; target: string; assertion: string; source_url?: string; confidence?: number }) {
   const cost = 0.02;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: 'add-claim', count: 1 });
+  if (charged > 0) await chargeIfNotOwner('add-claim', 1);
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   const graphUrl = process.env.GRAPH_API_URL.replace(/\/$/, '');
   try {
@@ -497,7 +505,7 @@ async function handleAddClaim(args: { entity: string; relation: string; target: 
 async function handleGetRegime({ entity }: { entity: string }) {
   const cost = 0.01;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: 'get-regime', count: 1 });
+  if (charged > 0) await chargeIfNotOwner('get-regime', 1);
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   const graphUrl = process.env.GRAPH_API_URL.replace(/\/$/, '');
   try {
@@ -509,7 +517,7 @@ async function handleGetRegime({ entity }: { entity: string }) {
 async function handleSetRegime(args: { entity: string; regime: string }) {
   const cost = 0.01;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: 'set-regime', count: 1 });
+  if (charged > 0) await chargeIfNotOwner('set-regime', 1);
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   const graphUrl = process.env.GRAPH_API_URL.replace(/\/$/, '');
   try {
@@ -521,7 +529,7 @@ async function handleSetRegime(args: { entity: string; regime: string }) {
 async function handleGetSignals(args: { entity: string; metric?: string; limit?: number }) {
   const cost = 0.02;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: 'get-signals', count: 1 });
+  if (charged > 0) await chargeIfNotOwner('get-signals', 1);
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   const graphUrl = process.env.GRAPH_API_URL.replace(/\/$/, '');
   try {
@@ -536,7 +544,7 @@ async function handleGetSignals(args: { entity: string; metric?: string; limit?:
 async function handleAddSignal(args: { entity: string; metric: string; value: number; timestamp?: number }) {
   const cost = 0.02;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: 'add-signal', count: 1 });
+  if (charged > 0) await chargeIfNotOwner('add-signal', 1);
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   const graphUrl = process.env.GRAPH_API_URL.replace(/\/$/, '');
   try {
@@ -548,7 +556,7 @@ async function handleAddSignal(args: { entity: string; metric: string; value: nu
 async function handleGetCausalParents({ entity, limit = 10 }: { entity: string; limit?: number }) {
   const cost = 0.03;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: 'causal-parents', count: 1 });
+  if (charged > 0) await chargeIfNotOwner('causal-parents', 1);
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   const graphUrl = process.env.GRAPH_API_URL.replace(/\/$/, '');
   try {
@@ -560,7 +568,7 @@ async function handleGetCausalParents({ entity, limit = 10 }: { entity: string; 
 async function handleGetCausalChildren({ entity, limit = 10 }: { entity: string; limit?: number }) {
   const cost = 0.03;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: 'causal-children', count: 1 });
+  if (charged > 0) await chargeIfNotOwner('causal-children', 1);
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   const graphUrl = process.env.GRAPH_API_URL.replace(/\/$/, '');
   try {
@@ -572,7 +580,7 @@ async function handleGetCausalChildren({ entity, limit = 10 }: { entity: string;
 async function handleGetCausalPath({ from_entity, to_entity }: { from_entity: string; to_entity: string }) {
   const cost = 0.05;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: 'causal-path', count: 1 });
+  if (charged > 0) await chargeIfNotOwner('causal-path', 1);
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   const graphUrl = process.env.GRAPH_API_URL.replace(/\/$/, '');
   try {
@@ -584,7 +592,7 @@ async function handleGetCausalPath({ from_entity, to_entity }: { from_entity: st
 async function handleSimulate(args: { entity: string; intervention: string; depth?: number }) {
   const cost = 0.10;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: 'simulate', count: 1 });
+  if (charged > 0) await chargeIfNotOwner('simulate', 1);
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   const graphUrl = process.env.GRAPH_API_URL.replace(/\/$/, '');
   try {
@@ -596,7 +604,7 @@ async function handleSimulate(args: { entity: string; intervention: string; dept
 async function handleListRegimeEntities({ regime }: { regime: string }) {
   const cost = 0.02;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: 'list-regime-entities', count: 1 });
+  if (charged > 0) await chargeIfNotOwner('list-regime-entities', 1);
   if (!process.env.GRAPH_API_URL) return { content: [{ type: 'text', text: JSON.stringify({ error: 'Graph service not configured' }) }], isError: true };
   const graphUrl = process.env.GRAPH_API_URL.replace(/\/$/, '');
   try {
@@ -612,7 +620,7 @@ async function handleListRegimeEntities({ regime }: { regime: string }) {
 async function handleListVerifiedActors({ category = 'all' }: { category?: string }) {
   const cost = PRICING.LIST_ACTORS.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.LIST_ACTORS.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.LIST_ACTORS.event, 1);
   const verified = Array.from(VERIFIED_ACTORS.entries()).map(([actorId, p]) => ({ actor_id: actorId, name: actorId.split('/').pop(), description: p.desc, cost_usd: p.charge, unit: p.unit }));
   return { content: [{ type: 'text', text: JSON.stringify({ actors: category === 'all' ? verified : verified.filter(a => a.description?.includes(category)), cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
 }
@@ -620,7 +628,7 @@ async function handleListVerifiedActors({ category = 'all' }: { category?: strin
 async function handleGetActorSchema({ actor_id }: { actor_id: string }) {
   const cost = PRICING.GET_SCHEMA.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.GET_SCHEMA.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.GET_SCHEMA.event, 1);
   const response = await axios.get(`https://api.apify.com/v2/acts/${actor_id}`, { headers: process.env.APIFY_TOKEN ? { Authorization: `Bearer ${process.env.APIFY_TOKEN}` } : {} });
   const actor = response.data.data;
   const pricing = VERIFIED_ACTORS.get(actor_id);
@@ -639,7 +647,7 @@ async function handleCallActor({ actor_id, input, timeout_secs = 120, max_cost_u
   }
   if (max_cost_usd !== undefined && estimatedCost > max_cost_usd) return { content: [{ type: 'text', text: JSON.stringify({ actor_id, requested_max: max_cost_usd, estimated_cost: estimatedCost, message: 'Cost exceeds max_cost_usd' }) }], isError: true };
   const { charged, freeUsed, remaining } = applyCredit(estimatedCost);
-  if (charged > 0) await Actor.charge({ eventName: 'call-actor', count: 1 });
+  if (charged > 0) await chargeIfNotOwner('call-actor', 1);
   const run = await Actor.start(actor_id, input);
   const startTime = Date.now(); const timeout = timeout_secs * 1000; let pollInterval = 2000;
   while (true) {
@@ -668,7 +676,7 @@ async function handleCallActor({ actor_id, input, timeout_secs = 120, max_cost_u
 async function handleSkillCompanyDossier({ domain }: { domain: string }) {
   const cost = PRICING.SKILL_COMPANY_DOSSIER.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_COMPANY_DOSSIER.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_COMPANY_DOSSIER.event, 1);
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   const apolloKey = process.env.APOLLO_API_KEY;
   const [websiteRaw, emailsRaw] = await Promise.allSettled([
@@ -690,7 +698,7 @@ async function handleSkillCompanyDossier({ domain }: { domain: string }) {
 async function handleSkillProspectCompany({ domain, seniority = 'senior,director,vp,c_suite' }: any) {
   const cost = PRICING.SKILL_PROSPECT_COMPANY.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_PROSPECT_COMPANY.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_PROSPECT_COMPANY.event, 1);
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   const apolloKey = process.env.APOLLO_API_KEY;
   if (!apolloKey) throw new Error('APOLLO_API_KEY not configured');
@@ -711,7 +719,7 @@ async function handleSkillProspectCompany({ domain, seniority = 'senior,director
 async function handleSkillOutboundList({ job_title, location, industry, company_size }: any) {
   const cost = PRICING.SKILL_OUTBOUND_LIST.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_OUTBOUND_LIST.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_OUTBOUND_LIST.event, 1);
   const run = await Actor.start('code_crafter/leads-finder', { leadsCount: 100, fileName: `outbound_${Date.now()}`, jobTitle: job_title, locationInclude: location || '', emailStatus: 'verified', size: company_size || '', industry: industry || '' });
   const timeout = 8 * 60 * 1000; const startTime = Date.now(); let pollInterval = 3000;
   while (true) {
@@ -733,7 +741,7 @@ async function handleSkillOutboundList({ job_title, location, industry, company_
 async function handleSkillLocalMarketMap({ business_type, location }: any) {
   const cost = PRICING.SKILL_LOCAL_MARKET_MAP.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_LOCAL_MARKET_MAP.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_LOCAL_MARKET_MAP.event, 1);
   const key = process.env.GOOGLE_PLACES_API_KEY;
   if (!key) throw new Error('GOOGLE_PLACES_API_KEY not configured');
   const allResults: any[] = []; let pageToken: string | undefined;
@@ -759,7 +767,7 @@ async function handleSkillLocalMarketMap({ business_type, location }: any) {
 async function handleSkillCompetitorIntel({ competitor_url, focus = 'both' }: any) {
   const cost = PRICING.SKILL_COMPETITOR_INTEL.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_COMPETITOR_INTEL.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_COMPETITOR_INTEL.event, 1);
   const competitorName = competitor_url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0].split('.')[0];
   const searchQueries: string[] = [];
   if (focus === 'pricing' || focus === 'both') searchQueries.push(`${competitorName} pricing plans`);
@@ -785,7 +793,7 @@ async function handleSkillCompetitorIntel({ competitor_url, focus = 'both' }: an
 async function handleSkillDecisionMakerFinder({ domain, departments = 'sales,marketing,engineering,executive' }: any) {
   const cost = PRICING.SKILL_DECISION_MAKER.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_DECISION_MAKER.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_DECISION_MAKER.event, 1);
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   const apolloKey = process.env.APOLLO_API_KEY;
   if (!apolloKey) throw new Error('APOLLO_API_KEY not configured');
@@ -811,7 +819,7 @@ async function handleSkillDecisionMakerFinder({ domain, departments = 'sales,mar
 async function handleSkillCompetitorAds({ competitor_name, competitor_domain }: any) {
   const cost = PRICING.SKILL_COMPETITOR_ADS.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_COMPETITOR_ADS.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_COMPETITOR_ADS.event, 1);
   const fbLibraryUrl = `https://www.facebook.com/ads/library/?active_status=active&ad_type=ALL&country=ALL&q=${encodeURIComponent(competitor_name)}&search_type=keyword_unordered`;
   const googleTransparencyUrl = `https://adstransparency.google.com/?region=anywhere&advertiserName=${encodeURIComponent(competitor_name)}`;
   const [fbContent, googleContent] = await Promise.all([jinaFetch(fbLibraryUrl, 2000), jinaFetch(googleTransparencyUrl, 2000)]);
@@ -827,7 +835,7 @@ async function handleSkillCompetitorAds({ competitor_name, competitor_domain }: 
 async function handleSkillJobSignals({ company_name, domain }: any) {
   const cost = PRICING.SKILL_JOB_SIGNALS.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_JOB_SIGNALS.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_JOB_SIGNALS.event, 1);
   const allResults: any[] = [];
   await Promise.allSettled([
     `${company_name} jobs site:linkedin.com OR site:greenhouse.io OR site:lever.co OR site:jobs.ashbyhq.com`,
@@ -852,7 +860,7 @@ async function handleSkillJobSignals({ company_name, domain }: any) {
 async function handleSkillTechStack({ domain }: any) {
   const cost = PRICING.SKILL_TECH_STACK.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_TECH_STACK.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_TECH_STACK.event, 1);
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   const [builtWithContent, homepageContent, jobsContent] = await Promise.all([
     jinaFetch(`https://builtwith.com/${cleanDomain}`, 3000),
@@ -870,7 +878,7 @@ async function handleSkillTechStack({ domain }: any) {
 async function handleSkillFundingIntel({ company_name, domain }: any) {
   const cost = PRICING.SKILL_FUNDING_INTEL.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_FUNDING_INTEL.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_FUNDING_INTEL.event, 1);
   const allResults: any[] = [];
   await Promise.allSettled([
     `${company_name} funding round raised 2024 2025`,
@@ -890,7 +898,7 @@ async function handleSkillFundingIntel({ company_name, domain }: any) {
 async function handleSkillSocialProof({ company_name, domain }: any) {
   const cost = PRICING.SKILL_SOCIAL_PROOF.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_SOCIAL_PROOF.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_SOCIAL_PROOF.event, 1);
   const slug = company_name.toLowerCase().replace(/\s+/g, '-');
   const reviewPages: any[] = [];
   await Promise.allSettled([
@@ -915,7 +923,7 @@ async function handleSkillSocialProof({ company_name, domain }: any) {
 async function handleSkillMarketMap({ market, max_competitors = 10 }: any) {
   const cost = PRICING.SKILL_MARKET_MAP.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_MARKET_MAP.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_MARKET_MAP.event, 1);
   const allResults: any[] = [];
   await Promise.allSettled([
     `best ${market} tools software`,
@@ -934,7 +942,7 @@ async function handleSkillMarketMap({ market, max_competitors = 10 }: any) {
 async function handleSkillKasprEnrich({ linkedin_id, prospect_name }: any) {
   const cost = PRICING.SKILL_KASPR_ENRICH.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) await Actor.charge({ eventName: PRICING.SKILL_KASPR_ENRICH.event, count: 1 });
+  if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_KASPR_ENRICH.event, 1);
   const apiKey = process.env.KASPR_API_KEY;
   if (!apiKey) throw new Error("KASPR_API_KEY is not configured in Actor environment");
 
