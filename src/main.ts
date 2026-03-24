@@ -368,51 +368,6 @@ async function handleFindEmails({ domain, limit = 10 }: { domain: string; limit?
     free_credit_remaining: remaining 
   }, null, 2) }] };
 }
-  
-  const emeliaKey = process.env.EMELIA_API_KEY;
-  if (emeliaKey && emeliaKey.length > 5) {
-    try {
-      const companyName = domain.replace(/\.[a-z]{2,}$/i, '').replace(/-/g, ' ');
-      const jobRes = await axios.post('https://api.emelia.io/tools/find/email',
-        { fullname: companyName, companyName: domain, country: 'US' },
-        { headers: { 'Authorization': `Bearer ${emeliaKey}`, 'Content-Type': 'application/json' }, timeout: 15000 }
-      );
-      
-      if (jobRes.data && !jobRes.data.error && jobRes.data.jobId) {
-        const jobId = jobRes.data.jobId;
-        for (let i = 0; i < 30; i++) {
-          await new Promise(r => setTimeout(r, 1000));
-          const resultRes = await axios.get(`https://api.emelia.io/tools/find/email/${jobId}`,
-            { headers: { 'Authorization': `Bearer ${emeliaKey}` }, timeout: 5000 }
-          );
-          
-          if (resultRes.data && resultRes.data.status === 'completed') {
-            const emails = (resultRes.data.result || []).slice(0, limit).map((p: any) => ({
-              email: p.email || p.email_address,
-              name: p.full_name || p.fullname || '',
-              title: p.job_title || '',
-            }));
-            graphClient.ingest('find_emails', { domain, emails });
-            return { content: [{ type: 'text', text: JSON.stringify({ domain, emails_found: emails.length, emails, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
-          } else if (resultRes.data && resultRes.data.status === 'failed') {
-            break;
-          }
-        }
-      }
-    } catch (e: any) {
-      console.error('Emelia error:', e?.message || e);
-    }
-  }
-  
-  return { content: [{ type: 'text', text: JSON.stringify({ 
-    domain, 
-    emails_found: 0, 
-    message: 'Email lookup temporarily unavailable. Try search or company info instead.',
-    cost_usd: cost, 
-    free_credit_used: freeUsed, 
-    free_credit_remaining: remaining 
-  }, null, 2) }] };
-}
 
 async function handleFindLocalLeads({ keyword, location, radius = 5000, max_results = 20 }: any) {
   const cost = PRICING.FIND_LOCAL_LEADS.charge;
