@@ -11,9 +11,9 @@ description: |
 homepage: https://github.com/mcamarketing/forage-mcp
 documentation: https://github.com/mcamarketing/forage-mcp#readme
 
-author: 
-  name: Mark Cameron
-  email: mark@mcamarketing.net
+author:
+  name: Riccardo Minniti
+  email: riccardo@ernestalabs.com
 
 license: MIT
 
@@ -165,8 +165,8 @@ pricing:
     Graph storage via FalkorDB (free tier available).
 
 support:
-  issues: https://github.com/mcamarketing/forage-mcp/issues
-  email: mark@mcamarketing.net
+  issues: https://github.com/mcamarketing/web-intelligence-mcp/issues
+  email: riccardo@ernestalabs.com
 
 repository:
   type: git
