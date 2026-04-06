@@ -1,0 +1,368 @@
+{
+  "serverInfo": {
+    "name": "Forage MCP Server",
+    "version": "1.0.0"
+  },
+  "authentication": {
+    "required": true,
+    "schemes": ["bearer"]
+  },
+  "tools": [
+    {
+      "name": "search_web",
+      "description": "Search the web with Google-like results using multiple sources (Brave, Bing, DuckDuckGo) with deduplication",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": { 
+            "type": "string", 
+            "description": "Search query" 
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "scrape_page",
+      "description": "Extract clean markdown content from any URL with JavaScript rendering support",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": { 
+            "type": "string", 
+            "description": "URL to scrape" 
+          }
+        },
+        "required": ["url"]
+      }
+    },
+    {
+      "name": "get_company_info",
+      "description": "Get complete company profile and intelligence from domain",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "domain": { 
+            "type": "string", 
+            "description": "Company domain (e.g., stripe.com)" 
+          }
+        },
+        "required": ["domain"]
+      }
+    },
+    {
+      "name": "find_emails",
+      "description": "Discover verified B2B email addresses with 4-step verification pipeline (SMTP + LinkedIn corroboration)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "domain": { 
+            "type": "string", 
+            "description": "Company domain (e.g., stripe.com)" 
+          }
+        },
+        "required": ["domain"]
+      }
+    },
+    {
+      "name": "find_leads",
+      "description": "Find B2B leads by title, industry, and location with verified contact info",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": { 
+            "type": "string", 
+            "description": "Job title (e.g., 'VP Marketing')" 
+          },
+          "industry": { 
+            "type": "string", 
+            "description": "Industry sector" 
+          },
+          "location": { 
+            "type": "string", 
+            "description": "City or region" 
+          }
+        },
+        "required": ["title"]
+      }
+    },
+    {
+      "name": "find_local_leads",
+      "description": "Find local businesses by niche and location with contact details and ratings",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location": { 
+            "type": "string", 
+            "description": "City or region" 
+          },
+          "industry": { 
+            "type": "string", 
+            "description": "Business type or niche" 
+          }
+        },
+        "required": ["location", "industry"]
+      }
+    },
+    {
+      "name": "query_knowledge",
+      "description": "Search entities in the persistent knowledge graph",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": { 
+            "type": "string", 
+            "description": "Natural language query" 
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "enrich_entity",
+      "description": "Get full entity profile with all relationships from knowledge graph",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entity_name": { 
+            "type": "string", 
+            "description": "Entity name to enrich" 
+          }
+        },
+        "required": ["entity_name"]
+      }
+    },
+    {
+      "name": "find_connections",
+      "description": "Discover relationship paths and connections between entities in the graph",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entity_name": { 
+            "type": "string", 
+            "description": "Starting entity name" 
+          }
+        },
+        "required": ["entity_name"]
+      }
+    },
+    {
+      "name": "skill_company_dossier",
+      "description": "Multi-step workflow: Create complete company profile + 10 key contacts",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "company_name": { 
+            "type": "string", 
+            "description": "Company name to research" 
+          }
+        },
+        "required": ["company_name"]
+      }
+    },
+    {
+      "name": "skill_prospect_company",
+      "description": "Multi-step workflow: Find 15 decision makers with verified emails",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "company_name": { 
+            "type": "string", 
+            "description": "Company to prospect" 
+          }
+        },
+        "required": ["company_name"]
+      }
+    },
+    {
+      "name": "skill_outbound_list",
+      "description": "Multi-step workflow: Generate 100 verified leads for CRM import",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "industry": { 
+            "type": "string", 
+            "description": "Target industry" 
+          },
+          "location": { 
+            "type": "string", 
+            "description": "Target location" 
+          }
+        },
+        "required": ["industry"]
+      }
+    },
+    {
+      "name": "skill_competitor_intel",
+      "description": "Multi-step workflow: Competitor analysis and market intelligence",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "company_name": { 
+            "type": "string", 
+            "description": "Company to analyze competitors for" 
+          }
+        },
+        "required": ["company_name"]
+      }
+    },
+    {
+      "name": "skill_tech_stack",
+      "description": "Multi-step workflow: Detect company technology stack and tools",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "domain": { 
+            "type": "string", 
+            "description": "Company domain" 
+          }
+        },
+        "required": ["domain"]
+      }
+    },
+    {
+      "name": "skill_funding_intel",
+      "description": "Multi-step workflow: Funding rounds and investor intelligence",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "company_name": { 
+            "type": "string", 
+            "description": "Company name" 
+          }
+        },
+        "required": ["company_name"]
+      }
+    },
+    {
+      "name": "skill_local_market_map",
+      "description": "Multi-step workflow: Map local market with competitor analysis",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location": { 
+            "type": "string", 
+            "description": "Geographic area" 
+          },
+          "industry": { 
+            "type": "string", 
+            "description": "Business type" 
+          }
+        },
+        "required": ["location", "industry"]
+      }
+    },
+    {
+      "name": "skill_job_signals",
+      "description": "Multi-step workflow: Hiring trend analysis and job market signals",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "company_name": { 
+            "type": "string", 
+            "description": "Company to analyze" 
+          }
+        },
+        "required": ["company_name"]
+      }
+    },
+    {
+      "name": "add_claim",
+      "description": "Add a claim/provenance entry to the knowledge graph",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entity_id": { 
+            "type": "string", 
+            "description": "Entity ID" 
+          },
+          "claim": { 
+            "type": "object", 
+            "description": "Claim data" 
+          }
+        },
+        "required": ["entity_id", "claim"]
+      }
+    },
+    {
+      "name": "get_claims",
+      "description": "Get all claims for an entity from the knowledge graph",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entity_id": { 
+            "type": "string", 
+            "description": "Entity ID" 
+          }
+        },
+        "required": ["entity_id"]
+      }
+    },
+    {
+      "name": "add_signal",
+      "description": "Add time-series signal data to the knowledge graph",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entity_id": { 
+            "type": "string", 
+            "description": "Entity ID" 
+          },
+          "signal": { 
+            "type": "object", 
+            "description": "Signal data" 
+          }
+        },
+        "required": ["entity_id", "signal"]
+      }
+    },
+    {
+      "name": "get_signals",
+      "description": "Get time-series signals for an entity",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entity_id": { 
+            "type": "string", 
+            "description": "Entity ID" 
+          }
+        },
+        "required": ["entity_id"]
+      }
+    },
+    {
+      "name": "set_regime",
+      "description": "Set operational regime state for an entity",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entity_id": { 
+            "type": "string", 
+            "description": "Entity ID" 
+          },
+          "regime": { 
+            "type": "string", 
+            "description": "Regime state" 
+          }
+        },
+        "required": ["entity_id", "regime"]
+      }
+    },
+    {
+      "name": "get_regime",
+      "description": "Get current operational regime state for an entity",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "entity_id": { 
+            "type": "string", 
+            "description": "Entity ID" 
+          }
+        },
+        "required": ["entity_id"]
+      }
+    }
+  ],
+  "resources": [],
+  "prompts": []
+}
