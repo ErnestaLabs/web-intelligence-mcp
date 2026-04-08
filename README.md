@@ -1,6 +1,6 @@
 # Forage MCP — Web Intelligence & Persistent Knowledge Graph for AI Agents
 
-**By Riccardo Minniti / Ernesta Labs** | [riccardo@ernestalabs.com](mailto:riccardo@ernestalabs.com)
+**By Riccardo Minniti / Ernesta Labs** | [director@useforage.xyz](mailto:director@useforage.xyz)
 
 Forage is a Model Context Protocol (MCP) server that gives AI agents **real-time web intelligence** and a **self-accumulating knowledge graph**. One connection provides 24 tools and 12 multi-step skills: web search, company data, verified B2B emails, local leads, and a graph that remembers everything your agent has ever discovered.
 
@@ -10,53 +10,63 @@ Built on Apify's scraping infrastructure. Powered by FalkorDB for persistent gra
 
 **Author:** Riccardo Minniti  
 **Organization:** Ernesta Labs  
-**Contact:** [riccardo@ernestalabs.com](mailto:riccardo@ernestalabs.com)  
+**Contact:** [director@useforage.xyz](mailto:director@useforage.xyz)  
+**Website:** [useforage.xyz](https://useforage.xyz)  
 **GitHub:** [github.com/ErnestaLabs/web-intelligence-mcp](https://github.com/ErnestaLabs/web-intelligence-mcp)  
-**Apify:** [apify.com/ernesta_labs/forage](https://apify.com/ernesta_labs/forage)
+**Apify:** [apify.com/ernesta_labs/forage](https://apify.com/ernesta_labs/forage)  
+
+---
+
+## 🎁 $5 Free Credit — Start Immediately
+
+Every new Forage user gets **$5 free** to explore all 36 tools and 12 skills. No credit card required. No Apify account needed. Just connect and start using it.
+
+That's enough for:
+- **167 web searches** ($0.03 each)
+- **71 page scrapes** ($0.07 each)
+- **62 company profiles** ($0.08 each)
+- **50 email lookups** ($0.10 each)
+- **1 full company dossier** ($0.50) + **33 web searches**
 
 ---
 
 ## The Knowledge Graph — Your Agent's Memory
 
-Every tool call automatically feeds a private knowledge graph that grows smarter over time. No other MCP server does this.
+Forage includes a **FalkorDB** property graph that silently accumulates entities and relationships from every tool call. It runs on our infrastructure — you don't set anything up, and you don't manage it.
+
+**What gets stored:**
+
+When your agent calls `search_web`, `get_company_info`, `find_emails`, or any skill, Forage extracts key entities and writes them to the graph:
+
+- **Entities** — Companies, people, domains, locations, industries. Each gets a SHA-256 identity hash for deduplication. If you search for "Stripe" twice, you get one entity — not two.
+- **Relationships** — Typed, directed edges: `works_at(Stripe)`, `located_in(San Francisco)`, `has_domain(stripe.com)`, `competes_with(Adyen)`. Not similarity scores — actual named relationships.
+- **Claims** — Sourced assertions with confidence scores: *"Stripe raised $6.5B Series E" (source: techcrunch.com, confidence: 0.89)*. Provenance tracked — who said what, where, when.
+- **Signals** — Numeric data points attached to entities over time: headcount, revenue, job postings, funding amounts. Queryable as time-series.
+- **Regimes** — State labels on entities: `normal`, `stressed`, `pre_tipping`, `post_event`. Set manually or via `simulate`.
+
+**What it's not:**
+- Not a vector database. No embeddings, no similarity search.
+- Not RAG. It doesn't chunk documents or generate context passages.
+- Not conversation memory. It stores structured facts about the world, not chat history.
+
+**When it matters:**
+
+The graph starts empty. After your agent has researched 5-10 companies in a market, it becomes useful — `query_knowledge` returns what you've already found instead of re-scraping the web, `find_connections` reveals relationships between entities you've researched, and `simulate` traces causal chains through the graph. The more you use Forage, the faster and smarter it gets.
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    FORAGE KNOWLEDGE GRAPH                    │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│   [Company A] ──── has_domain ────▶ [domain.com]           │
-│       │                                │                    │
-│       │ works_at                       │ has_email_pattern  │
-│       ▼                                ▼                    │
-│   [Person B] ◀─── has_title ──── [Email Pattern]           │
-│       │                                │                    │
-│       │ located_in                     │ verified_emails    │
-│       ▼                                ▼                    │
-│   [San Francisco]              [john@domain.com]           │
-│       │                                │                    │
-│       │ operates_in                    │ linkedin           │
-│       ▼                                ▼                    │
-│   [SaaS Industry]              [LinkedIn Profile]          │
-│                                                             │
-│   Claims: "Raised Series A in 2024" (confidence: 89%)      │
-│   Signals: Hiring spike in Q4 2025 (+45%)                  │
-│   Regime: growth                                           │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+You search: "Stripe"
+  └─ Forage stores: Company(Stripe) → has_domain(stripe.com)
+                    → located_in(San Francisco)  
+                    → competes_with(Adyen)
+
+You search: "Adyen"  
+  └─ Forage stores: Company(Adyen) → located_in(Amsterdam)
+                    → competes_with(Stripe)
+
+You call: find_connections(from: "Stripe", to: "Adyen")
+  └─ Returns: Stripe ──competes_with──▶ Adyen (direct)
+              Stripe ──located_in──▶ San Francisco ──operates_in──▶ SaaS ──operates_in──▶ Amsterdam ──located_in──◀ Adyen (3 hops)
 ```
-
-### What makes it different
-
-| Feature | Forage Graph | Generic RAG/Vector DB |
-|---------|--------------|----------------------|
-| Entity deduplication | ✓ SHA-256 identity | ✗ Creates duplicates |
-| Relationship tracking | ✓ Typed edges (works_at, located_in) | ✗ Similarity only |
-| Confidence scoring | ✓ Increases with corroboration | ✗ Static embeddings |
-| Provenance (claims) | ✓ Who said what, when | ✗ No source tracking |
-| Time-series signals | ✓ Track metrics over time | ✗ Snapshot only |
-| Causal inference | ✓ Find what drives what | ✗ No causality |
-| Regime detection | ✓ Normal / stressed / pre-tipping | ✗ No state tracking |
 
 ### Graph tools
 
@@ -75,7 +85,7 @@ Every tool call automatically feeds a private knowledge graph that grows smarter
 | `causal_children` | What this entity drives | $0.08 |
 | `causal_path` | Highest-weight causal path | $0.15 |
 | `simulate` | Propagate shock/boost through graph | $0.25 |
-| `get_graph_stats` | Entity/relationship counts | Free |
+| `get_graph_stats` | Entity/relationship counts | **Free** |
 
 The graph is **persistent** — stored in FalkorDB on our infrastructure. Your agent's research accumulates across sessions. The more you use Forage, the smarter it gets.
 
@@ -135,8 +145,6 @@ Each email gets a confidence score (0-100) based on:
 - **Confidence 50-69**: Pattern-based with partial verification. Use with caution.
 - **Below 50**: Not returned (filtered out).
 
-This is not a simple mailserver check. It's a multi-source corroboration pipeline that other MCP servers don't offer.
-
 ---
 
 ## Web Intelligence Tools
@@ -145,12 +153,12 @@ This is not a simple mailserver check. It's a multi-source corroboration pipelin
 
 | Tool | What it does | Price | Why this price |
 |------|--------------|-------|----------------|
-| `search_web` | Multi-source search, deduplicated, ranked | $0.03 | Aggregates Brave, Bing, DuckDuckGo + dedup + rank. Cheaper than calling each API separately ($0.03 total vs $0.06+ if you called 2 search APIs) |
+| `search_web` | Multi-source search, deduplicated, ranked | $0.03 | Aggregates Brave, Bing, DuckDuckGo + dedup + rank |
 | `scrape_page` | Extract clean markdown from any URL | $0.07 | Includes proxy rotation, JavaScript rendering, anti-bot bypass |
 | `get_company_info` | Domain → full company profile | $0.08 | Aggregates 5+ data sources: website, LinkedIn, Crunchbase patterns, social profiles |
-| `find_emails` | Verified B2B emails with LinkedIn | $0.10 | 4-step pipeline above |
+| `find_emails` | Verified B2B emails with LinkedIn | $0.10 | 4-step verification pipeline above |
 | `find_local_leads` | Local businesses by niche + location | $0.15 | Google Maps + enrichment + phone/website extraction |
-| `find_leads` | B2B leads by title/industry/location | $0.25/100 leads | That's $0.0025 per lead. Try finding 100 leads manually. |
+| `find_leads` | B2B leads by title/industry/location | $0.25/100 leads | $0.0025 per lead — cheaper than any alternative |
 
 ### Skills (Multi-Step Workflows)
 
@@ -183,14 +191,14 @@ Skills chain multiple tools into one call, returning ready-to-use intelligence p
 | B2B leads | ✓ | ✗ | Partial | ✗ |
 | Company intelligence | ✓ | ✗ | Partial | ✗ |
 | Local businesses | ✓ | ✗ | ✓ | ✗ |
-| **Persistent knowledge graph** | ✓ | ✗ | ✗ | ✗ |
-| **Provenance & claims** | ✓ | ✗ | ✗ | ✗ |
-| **Causal analysis** | ✓ | ✗ | ✗ | ✗ |
-| **Time-series signals** | ✓ | ✗ | ✗ | ✗ |
+| Persistent knowledge graph | ✓ | ✗ | ✗ | ✗ |
+| Causal analysis | ✓ | ✗ | ✗ | ✗ |
+| Time-series signals | ✓ | ✗ | ✗ | ✗ |
 | Multi-step skills | ✓ (12 skills) | ✗ | ✗ | ✗ |
 | Actor gateway (1000+) | ✓ | ✗ | ✓ | ✗ |
+| **Free credit to start** | **$5** | **$5** | ✗ | ✗ |
 
-**The knowledge graph is the differentiator.** Other tools give you data. Forage gives you *accumulated intelligence*. Every search, every email lookup, every company profile feeds your private graph. After a week of use, your agent knows more about your market than any single search ever could.
+The knowledge graph is the differentiator. Other tools give you a single response. Forage gives you accumulated intelligence — every search, email lookup, and company profile feeds your private graph. After a week of use, your agent knows more about your market than any single search could provide.
 
 ---
 
@@ -198,9 +206,9 @@ Skills chain multiple tools into one call, returning ready-to-use intelligence p
 
 ### 1. Get Your API Token
 
-Go to [Apify Console → Settings → Integrations](https://console.apify.com/account/integrations) and copy your Personal API Token.
+Go to [Apify Console → Settings → Integrations](https://console.apify.com/account/integrations) and copy your Personal API Token. Or sign up at [useforage.xyz](https://useforage.xyz) — you'll get $5 free credit.
 
-### 2. Connect to Claude / Cursor / n8n
+### 2. Connect to Your AI Client
 
 **Claude Desktop** (`%APPDATA%\Claude\claude_desktop_config.json`):
 
@@ -231,6 +239,26 @@ Go to [Apify Console → Settings → Integrations](https://console.apify.com/ac
       "args": [
         "-y", "@anthropic/mcp-proxy",
         "https://ernesta-labs--forage.apify.actor/mcp/sse"
+      ],
+      "env": {
+        "APIFY_API_TOKEN": "YOUR_APIFY_TOKEN"
+      }
+    }
+  }
+}
+```
+
+**Docker (recommended for mcp.so):**
+
+```json
+{
+  "mcpServers": {
+    "forage": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "APIFY_API_TOKEN",
+        "ghcr.io/ernestalabs/web-intelligence-mcp:latest"
       ],
       "env": {
         "APIFY_API_TOKEN": "YOUR_APIFY_TOKEN"
@@ -340,15 +368,15 @@ Returns: Path through shared connections, events, technologies
 
 Pay per tool call. No subscription. No minimum. Every response includes the cost.
 
-| Your Apify spend | Your Forage cost | Ratio |
-|-----------------|------------------|-------|
-| $1 | ~$0.75 | 25% markup |
-| $10 | ~$7.50 | 25% markup |
-| $100 | ~$75 | 25% markup |
+**$5 free credit for every new user.** Start immediately, no credit card required.
 
-The 25% markup covers: proxy infrastructure, knowledge graph storage, email verification pipeline, multi-engine search aggregation, and ongoing maintenance.
+| Your spend | What you get |
+|-----------|-------------|
+| $5 free | 167 searches, or 71 scrapes, or 50 email lookups, or 1 full dossier + 33 searches |
+| $10 | ~1,000 tool calls across all features |
+| $50 | Full research pipeline: dozens of dossiers, hundreds of searches, thousands of graph queries |
 
-**Free trial:** New Apify accounts get $5 platform credit. Try Forage risk-free.
+All prices include infrastructure costs: proxy rotation, knowledge graph storage, email verification pipeline, and multi-engine search aggregation.
 
 ---
 
@@ -356,7 +384,7 @@ The 25% markup covers: proxy infrastructure, knowledge graph storage, email veri
 
 - **Some sites block scraping** — we use proxies + JS rendering, but some sites (LinkedIn, closed social networks) are protected
 - **Email accuracy ≠ 100%** — confidence scores reflect real verification, but email addresses can change
-- **Knowledge graph is persistent but not portable** — data lives on our FalkorDB instance (not exported yet)
+- **Knowledge graph is persistent but not portable** — data lives on our FalkorDB instance (export coming soon)
 - **Rate limits** — Apify enforces per-account limits; Forage doesn't add extra limits on top
 
 ---
@@ -364,7 +392,8 @@ The 25% markup covers: proxy infrastructure, knowledge graph storage, email veri
 ## Support & Links
 
 - **Author:** Riccardo Minniti / Ernesta Labs
-- **Email:** [riccardo@ernestalabs.com](mailto:riccardo@ernestalabs.com)
+- **Email:** [director@useforage.xyz](mailto:director@useforage.xyz)
+- **Website:** [useforage.xyz](https://useforage.xyz)
 - **GitHub:** [github.com/ErnestaLabs/web-intelligence-mcp](https://github.com/ErnestaLabs/web-intelligence-mcp)
 - **Issues:** [github.com/ErnestaLabs/web-intelligence-mcp/issues](https://github.com/ErnestaLabs/web-intelligence-mcp/issues)
 - **Apify Actor:** [apify.com/ernesta_labs/forage](https://apify.com/ernesta_labs/forage)
