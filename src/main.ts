@@ -998,6 +998,74 @@ async function main() {
     // Streamable HTTP — one transport per session, stored by session ID
     const transports = new Map<string, StreamableHTTPServerTransport>();
 
+    // ── SIMPLE HTTP ENDPOINTS FOR DIRECT TESTING ─────────────────────
+    // These bypass MCP protocol and let you test tools with curl/requests
+    
+    app.get('/health', (_req: any, res: any) =>
+      res.json({ status: 'ok', server: 'forage', transport: 'streamable-http', tools: TOOLS.length }));
+    
+    app.get('/tools', (_req: any, res: any) => {
+      currentApiToken = extractToken(_req.headers['authorization']);
+      res.json({ tools: TOOLS.map(t => ({ name: t.name, description: t.description, required: t.inputSchema.required || [] })) });
+    });
+    
+    app.post('/call/:tool', async (req: any, res: any) => {
+      try {
+        currentApiToken = extractToken(req.headers['authorization']);
+        const toolName = req.params.tool;
+        const args = req.body || {};
+        
+        // Reuse the exact same handler switch from MCP server
+        let result: any;
+        switch (toolName) {
+          case 'search_web': result = await handleSearchWeb(args); break;
+          case 'scrape_page': result = await handleScrapePage(args); break;
+          case 'get_company_info': result = await handleGetCompanyInfo(args); break;
+          case 'find_emails': result = await handleFindEmails(args); break;
+          case 'find_local_leads': result = await handleFindLocalLeads(args); break;
+          case 'find_leads': result = await handleFindLeads(args); break;
+          case 'query_knowledge': result = await handleQueryKnowledge(args); break;
+          case 'enrich_entity': result = await handleEnrichEntity(args); break;
+          case 'find_connections': result = await handleFindConnections(args); break;
+          case 'get_graph_stats': result = await handleGetGraphStats(); break;
+          case 'get_claims': result = await handleGetClaims(args); break;
+          case 'add_claim': result = await handleAddClaim(args); break;
+          case 'get_regime': result = await handleGetRegime(args); break;
+          case 'set_regime': result = await handleSetRegime(args); break;
+          case 'get_signals': result = await handleGetSignals(args); break;
+          case 'add_signal': result = await handleAddSignal(args); break;
+          case 'get_causal_parents': result = await handleGetCausalParents(args); break;
+          case 'get_causal_children': result = await handleGetCausalChildren(args); break;
+          case 'get_causal_path': result = await handleGetCausalPath(args); break;
+          case 'simulate': result = await handleSimulate(args); break;
+          case 'list_regime_entities': result = await handleListRegimeEntities(args); break;
+          case 'list_verified_actors': result = await handleListVerifiedActors(args); break;
+          case 'get_actor_schema': result = await handleGetActorSchema(args); break;
+          case 'call_actor': result = await handleCallActor(args); break;
+          case 'skill_company_dossier': result = await handleSkillCompanyDossier(args); break;
+          case 'skill_prospect_company': result = await handleSkillProspectCompany(args); break;
+          case 'skill_outbound_list': result = await handleSkillOutboundList(args); break;
+          case 'skill_local_market_map': result = await handleSkillLocalMarketMap(args); break;
+          case 'skill_competitor_intel': result = await handleSkillCompetitorIntel(args); break;
+          case 'skill_decision_maker_finder': result = await handleSkillDecisionMakerFinder(args); break;
+          case 'skill_competitor_ads': result = await handleSkillCompetitorAds(args); break;
+          case 'skill_job_signals': result = await handleSkillJobSignals(args); break;
+          case 'skill_tech_stack': result = await handleSkillTechStack(args); break;
+          case 'skill_funding_intel': result = await handleSkillFundingIntel(args); break;
+          case 'skill_social_proof': result = await handleSkillSocialProof(args); break;
+          case 'skill_market_map': result = await handleSkillMarketMap(args); break;
+          case 'skill_kaspr_enrich': result = await handleSkillKasprEnrich(args); break;
+          default:
+            return res.status(404).json({ error: `Unknown tool: ${toolName}`, available: TOOLS.map(t => t.name) });
+        }
+        res.json({ success: true, tool: toolName, result });
+      } catch (err: any) {
+        res.status(500).json({ success: false, tool: req.params.tool, error: err.message });
+      }
+    });
+
+    // ── MCP PROTOCOL (CATCH-ALL) ────────────────────────────────────
+
     app.all('*', async (req: any, res: any) => {
       try {
         // Extract API token from Authorization header
@@ -1033,9 +1101,6 @@ async function main() {
         if (!res.headersSent) res.status(500).json({ error: String(err) });
       }
     });
-
-    app.get('/health', (_req: any, res: any) =>
-      res.json({ status: 'ok', server: 'forage', transport: 'streamable-http', tools: TOOLS.length }));
 
     // Keepalive — prevents Apify standby idle timeout from killing the container
     const webServerUrl = process.env.ACTOR_WEB_SERVER_URL;
