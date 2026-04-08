@@ -122,16 +122,18 @@ Meanwhile the agents that connected to Forage six months ago? They know more abo
 
 **This is not** a search wrapper. Not a RAG system. Not a vector database. Not a chatbot with browsing.
 
-**This is** pay-per-call. Your agent uses it, you see the cost. Your first $5 is free.
+**This is** pay-per-call. Your agent uses it, you see the cost. Forage gives every new user $5 in free credits, on top of anything Apify offers.
 
 **This is not** a subscription. No monthly fee. No minimum commitment.
 
 ---
 
-## What $5 Gets You
+## Your First $5 Is on Forage
 
-| | |
-|---|---|
+$5 in free credits, loaded to your account the moment you connect. This is Forage's own credit, on top of anything Apify gives you as a platform user. New to Apify or a power user, the $5 starts the same way.
+
+| Spend | Get |
+|-------|-----|
 | $5 free | 167 web searches, or 71 page scrapes, or 50 email lookups, or 1 full dossier + 33 searches |
 | $10 | ~1,000 tool calls across all features |
 | $50 | Full research pipeline: dozens of dossiers, hundreds of searches, thousands of graph queries |
@@ -140,7 +142,7 @@ Meanwhile the agents that connected to Forage six months ago? They know more abo
 
 ## Quick Start
 
-Get a free Apify token at [console.apify.com](https://console.apify.com/account/integrations). Takes 30 seconds. Your $5 free credit activates immediately.
+Get an Apify token at [console.apify.com](https://console.apify.com/account/integrations). Takes 30 seconds. Forage adds $5 in free credits to your first session, regardless of your Apify account status.
 
 **Claude Desktop** (add to `%APPDATA%\Claude\claude_desktop_config.json`):
 
