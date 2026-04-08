@@ -202,31 +202,19 @@ Pay per call. Every response shows the cost. No surprises.
 
 ---
 
-## Compare
+## What This Is. What It Isn't.
 
-| | Forage | Brave Search MCP | Apify MCP | AgentQL |
-|---|---|---|---|---|
-| Web search | ✓ | ✓ | ✗ | ✗ |
-| Page scraping | ✓ | ✗ | ✓ | ✓ |
-| Email discovery | ✓ | ✗ | ✗ | ✗ |
-| B2B leads | ✓ | ✗ | Partial | ✗ |
-| Company intelligence | ✓ | ✗ | Partial | ✗ |
-| Local businesses | ✓ | ✗ | ✓ | ✗ |
-| Persistent knowledge graph | ✓ | ✗ | ✗ | ✗ |
-| Causal analysis | ✓ | ✗ | ✗ | ✗ |
-| Time-series signals | ✓ | ✗ | ✗ | ✗ |
-| Multi-step skills (13) | ✓ | ✗ | ✗ | ✗ |
-| Actor gateway (1500+) | ✓ | ✗ | ✓ | ✗ |
-| **Free credit** | **$5** | **$5** | ✗ | ✗ |
+**This is** an MCP server that gives your agent live web intelligence and persistent memory.
 
----
+**This is not** a search engine wrapper. Not a RAG system. Not a vector database. Not a chatbot with browsing.
 
-## Limitations
+**This is** a 36-tool suite: search, scrape, discover emails, generate leads, profile companies, map markets, track hiring signals, analyse competitors, run causal analysis — all wired into a knowledge graph with nearly 1 million entities.
 
-- Some sites block scraping. We use proxies and JS rendering, but login-walled sites (LinkedIn profiles, private networks) are protected.
-- Email accuracy isn't 100%. Confidence scores reflect verification — use them, but verify critical contacts.
-- Skills aggregate multiple sources in parallel. Some sources may return partial data for any given query.
-- The knowledge graph is persistent across sessions but not yet portable. Export is planned.
+**This is not** a toy graph with 50 companies someone loaded in. It's a FIBO-aligned ontology with 150+ entity types and 200+ relationship types covering finance, technology, geopolitics, markets, legal, biology. Causal chains. Contagion pathways. Regime transitions. Shock propagation. Real structure.
+
+**This is** pay-per-call. Your agent uses it, you see the cost. Your first $5 is free.
+
+**This is not** a subscription. No monthly fee. No minimum commitment.
 
 ---
 
