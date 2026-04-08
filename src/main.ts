@@ -61,13 +61,41 @@ const PRICING = {
 };
 
 const VERIFIED_ACTORS = new Map<string, { charge: number; unit: string; desc: string }>([
-  ['apify/website-content-crawler', { charge: 0.20, unit: 'per_1000_pages', desc: 'Deep website crawling' }],
-  ['apify/google-maps-scraper', { charge: 0.27, unit: 'per_1000_places', desc: 'Google Maps reviews' }],
-  ['clockworks/free-twitter-scraper', { charge: 0.05, unit: 'per_1000_tweets', desc: 'Twitter/X data' }],
-  ['drobnikj/pdf-to-text', { charge: 0.14, unit: 'per_100_pages', desc: 'PDF parsing' }],
-  ['apify/linkedin-profile-scraper', { charge: 0.67, unit: 'per_100_profiles', desc: 'LinkedIn profiles' }],
-  ['apify/instagram-scraper', { charge: 0.20, unit: 'per_1000_posts', desc: 'Instagram posts' }],
-  ['code_crafter/leads-finder', { charge: 0.25, unit: 'per_100_leads', desc: 'B2B leads with emails' }],
+  // ── Web & content ───────────────────────────────────────────────────────
+  ['apify/website-content-crawler',        { charge: 0.20,  unit: 'per_1000_pages',   desc: 'Deep website crawling + text extraction' }],
+  ['apify/cheerio-scraper',                { charge: 0.01,  unit: 'per_1000_pages',   desc: 'Fast HTML scraper, email extraction' }],
+  ['apify/web-scraper',                    { charge: 0.10,  unit: 'per_1000_pages',   desc: 'Full JS browser scraper' }],
+  ['apify/google-search-scraper',          { charge: 0.003, unit: 'per_search',        desc: 'Google search results' }],
+  ['drobnikj/pdf-to-text',                 { charge: 0.14,  unit: 'per_100_pages',    desc: 'PDF parsing' }],
+  // ── Lead generation ─────────────────────────────────────────────────────
+  ['apify/google-maps-scraper',            { charge: 0.27,  unit: 'per_1000_places',  desc: 'Google Maps — local businesses, address, phone, website, reviews' }],
+  ['compass/crawler-google-places',        { charge: 0.10,  unit: 'per_1000_places',  desc: 'Google Places enrichment' }],
+  ['apify/linkedin-profile-scraper',       { charge: 0.67,  unit: 'per_100_profiles', desc: 'LinkedIn profiles — name, title, company, email' }],
+  ['apify/linkedin-company-scraper',       { charge: 0.50,  unit: 'per_100_companies',desc: 'LinkedIn company pages — employees, contacts' }],
+  ['anchor/linkedin-people-finder',        { charge: 0.30,  unit: 'per_100_results',  desc: 'LinkedIn people search by title/company' }],
+  ['code_crafter/leads-finder',            { charge: 0.25,  unit: 'per_100_leads',    desc: 'B2B leads with emails' }],
+  ['easyapi/b2b-leads-hunter',             { charge: 0.20,  unit: 'per_100_leads',    desc: 'B2B leads from multiple sources' }],
+  ['curious_coder/apollo-leads-scraper',   { charge: 0.15,  unit: 'per_100_leads',    desc: 'Apollo.io leads without API key' }],
+  ['vdrmota/contact-info-scraper',         { charge: 0.05,  unit: 'per_100_pages',    desc: 'Extract emails, phones from any website' }],
+  ['bebity/email-finder',                  { charge: 0.10,  unit: 'per_100_emails',   desc: 'Find emails by domain or name' }],
+  // ── Social media ────────────────────────────────────────────────────────
+  ['apify/instagram-scraper',              { charge: 0.20,  unit: 'per_1000_posts',   desc: 'Instagram posts, profiles, hashtags' }],
+  ['clockworks/free-twitter-scraper',      { charge: 0.05,  unit: 'per_1000_tweets',  desc: 'Twitter/X data' }],
+  ['apify/tiktok-scraper',                 { charge: 0.30,  unit: 'per_1000_posts',   desc: 'TikTok posts and profiles' }],
+  ['apify/facebook-pages-scraper',         { charge: 0.25,  unit: 'per_1000_posts',   desc: 'Facebook pages data' }],
+  ['apify/reddit-scraper',                 { charge: 0.05,  unit: 'per_1000_posts',   desc: 'Reddit posts and comments' }],
+  // ── E-commerce & reviews ────────────────────────────────────────────────
+  ['apify/amazon-product-scraper',         { charge: 0.20,  unit: 'per_1000_items',   desc: 'Amazon products, prices, reviews' }],
+  ['apify/tripadvisor-scraper',            { charge: 0.20,  unit: 'per_1000_reviews', desc: 'TripAdvisor reviews and listings' }],
+  ['apify/trustpilot-scraper',             { charge: 0.10,  unit: 'per_1000_reviews', desc: 'Trustpilot company reviews' }],
+  ['apify/booking-scraper',                { charge: 0.20,  unit: 'per_1000_items',   desc: 'Booking.com hotels and availability' }],
+  // ── Jobs & recruitment ──────────────────────────────────────────────────
+  ['apify/indeed-scraper',                 { charge: 0.10,  unit: 'per_1000_jobs',    desc: 'Indeed job listings' }],
+  ['apify/linkedin-jobs-scraper',          { charge: 0.20,  unit: 'per_100_jobs',     desc: 'LinkedIn job postings' }],
+  // ── Intelligence & OSINT ────────────────────────────────────────────────
+  ['apify/yelp-scraper',                   { charge: 0.10,  unit: 'per_1000_items',   desc: 'Yelp businesses and reviews' }],
+  ['apify/yellow-pages-scraper',           { charge: 0.05,  unit: 'per_1000_items',   desc: 'Yellow Pages business listings' }],
+  ['epctex/crunchbase-scraper',            { charge: 0.20,  unit: 'per_100_companies',desc: 'Crunchbase funding, investors, teams' }],
 ]);
 
 // ==========================================
@@ -151,6 +179,20 @@ const TOOLS = [
   { name: 'get_actor_schema', description: 'Get input schema and pricing for a specific Apify actor. Use before call_actor to understand required parameters. Cost: $0.01', inputSchema: { type: 'object', properties: { actor_id: { type: 'string' } }, required: ['actor_id'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
   { name: 'call_actor', description: 'Execute any Apify actor with custom input. Use list_verified_actors and get_actor_schema first to find actors and understand inputs. Set max_cost_usd to limit spending. Cost: actor price + 25%', inputSchema: { type: 'object', properties: { actor_id: { type: 'string' }, input: { type: 'object' }, timeout_secs: { type: 'number', default: 120 }, max_cost_usd: { type: 'number' } }, required: ['actor_id', 'input'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
   { name: 'search_apify_store', description: 'Search the Apify actor store (1500+ actors). Use to find the right actor for any task not covered by core tools — emails, LinkedIn, social media, jobs, real estate, e-commerce, AI, and more. Then call it with call_actor. Free', inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'e.g. "linkedin email finder" or "instagram scraper"' }, category: { type: 'string', description: 'Optional: lead-generation, social-media, e-commerce, travel, real-estate, jobs, ai, web-scraping' }, limit: { type: 'number', default: 20 } }, required: ['query'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  // ── SKILLS — deep multi-actor research bundles ─────────────────────────────
+  { name: 'skill_company_dossier', description: 'Deep company profile: website summary, key contacts, LinkedIn data, funding/investors from Crunchbase, phones, social links, news. Orchestrates 6+ actors in parallel. Cost: $0.50', inputSchema: { type: 'object', properties: { domain: { type: 'string', description: 'e.g. "stripe.com"' } }, required: ['domain'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_prospect_company', description: 'Find senior decision-makers at a company: C-suite, VPs, directors with emails and LinkedIn. Uses LinkedIn scrapers + Apollo (no API key). Cost: $0.75', inputSchema: { type: 'object', properties: { domain: { type: 'string' }, seniority: { type: 'string', default: 'senior,director,vp,c_suite', description: 'Comma-separated seniority levels' } }, required: ['domain'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_outbound_list', description: 'Generate outbound lead list (200+ leads) with verified emails and LinkedIn. Filters by job title, location, industry, company size. Uses 5 parallel lead-gen actors. Cost: $3.50', inputSchema: { type: 'object', properties: { job_title: { type: 'string' }, location: { type: 'string' }, industry: { type: 'string' }, company_size: { type: 'string' } }, required: ['job_title'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_local_market_map', description: 'Map all local businesses of a type in a city: names, addresses, phones, websites, emails, ratings. Uses Google Maps + Yelp + Yellow Pages in parallel. Up to 100 businesses. Cost: $0.80', inputSchema: { type: 'object', properties: { business_type: { type: 'string', description: 'e.g. "medspa" or "accountants"' }, location: { type: 'string', description: 'e.g. "London, UK"' } }, required: ['business_type', 'location'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_competitor_intel', description: 'Full competitor intelligence: pricing page, features, about, reviews from Trustpilot, G2, Capterra, and Google. Scrapes 8+ pages and searches in parallel. Cost: $0.80', inputSchema: { type: 'object', properties: { competitor_url: { type: 'string', description: 'e.g. "https://competitor.com"' }, focus: { type: 'string', enum: ['pricing', 'features', 'both'], default: 'both' } }, required: ['competitor_url'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_decision_maker_finder', description: 'Find department heads and decision-makers at a company by department. Combines LinkedIn people search, Apollo scraper, and email discovery. Cost: $1.00', inputSchema: { type: 'object', properties: { domain: { type: 'string' }, departments: { type: 'string', default: 'sales,marketing,engineering,executive', description: 'Comma-separated departments' } }, required: ['domain'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_competitor_ads', description: 'Research competitor advertising strategy: Facebook Ad Library, Google Transparency, ad copy examples, landing pages. Cost: $0.65', inputSchema: { type: 'object', properties: { competitor_name: { type: 'string' }, competitor_domain: { type: 'string' } }, required: ['competitor_name'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_job_signals', description: 'Analyse a company\'s hiring signals: job titles on Indeed + LinkedIn, department breakdown, careers page content. Reveals growth stage and strategic priorities. Cost: $0.55', inputSchema: { type: 'object', properties: { company_name: { type: 'string' }, domain: { type: 'string' } }, required: ['company_name'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_tech_stack', description: 'Detect a company\'s technology stack: BuiltWith data, Wappalyzer-style page signals, StackShare profile, engineering blog mentions, job tech requirements. Cost: $0.45', inputSchema: { type: 'object', properties: { domain: { type: 'string' } }, required: ['domain'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_funding_intel', description: 'Research a company\'s funding history: Crunchbase data (rounds, investors, valuation), TechCrunch articles, press releases. Cost: $0.70', inputSchema: { type: 'object', properties: { company_name: { type: 'string' }, domain: { type: 'string' } }, required: ['company_name'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_social_proof', description: 'Gather social proof: Trustpilot reviews (structured), G2 ratings, Capterra ratings, own-site testimonials and case studies. Cost: $0.55', inputSchema: { type: 'object', properties: { company_name: { type: 'string' }, domain: { type: 'string' } }, required: ['company_name'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_market_map', description: 'Map an entire market: top players, comparison sites, pricing tiers, G2/Capterra category pages. Returns structured competitive landscape. Cost: $1.20', inputSchema: { type: 'object', properties: { market: { type: 'string', description: 'e.g. "CRM software" or "email marketing"' }, max_competitors: { type: 'number', default: 10 } }, required: ['market'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  { name: 'skill_kaspr_enrich', description: 'Enrich a LinkedIn profile: name, headline, experience, email, phone, skills. Uses LinkedIn profile scraper + people finder. Cost: $0.75', inputSchema: { type: 'object', properties: { linkedin_id: { type: 'string', description: 'LinkedIn URL or profile ID' }, prospect_name: { type: 'string' } }, required: [] }, annotations: { readOnlyHint: true, destructiveHint: false } },
 ];
 
 // ==========================================
@@ -192,6 +234,19 @@ export function setupMcpServer() {
         case 'get_actor_schema': return await handleGetActorSchema(args as any);
         case 'call_actor': return await handleCallActor(args as any);
         case 'search_apify_store': return await handleSearchApifyStore(args as any);
+        case 'skill_company_dossier': return await handleSkillCompanyDossier(args as any);
+        case 'skill_prospect_company': return await handleSkillProspectCompany(args as any);
+        case 'skill_outbound_list': return await handleSkillOutboundList(args as any);
+        case 'skill_local_market_map': return await handleSkillLocalMarketMap(args as any);
+        case 'skill_competitor_intel': return await handleSkillCompetitorIntel(args as any);
+        case 'skill_decision_maker_finder': return await handleSkillDecisionMakerFinder(args as any);
+        case 'skill_competitor_ads': return await handleSkillCompetitorAds(args as any);
+        case 'skill_job_signals': return await handleSkillJobSignals(args as any);
+        case 'skill_tech_stack': return await handleSkillTechStack(args as any);
+        case 'skill_funding_intel': return await handleSkillFundingIntel(args as any);
+        case 'skill_social_proof': return await handleSkillSocialProof(args as any);
+        case 'skill_market_map': return await handleSkillMarketMap(args as any);
+        case 'skill_kaspr_enrich': return await handleSkillKasprEnrich(args as any);
         default: throw new Error(`Unknown tool: ${name}`);
       }
     } catch (error) {
@@ -223,6 +278,32 @@ async function serpSearch(query: string, num = 5): Promise<any[]> {
     const res = await axios.get('https://serpapi.com/search', { params: { q: query, api_key: key, engine: 'google', num }, timeout: 15000 });
     return res.data.organic_results || [];
   } catch { return []; }
+}
+
+/**
+ * Run any Apify actor and return dataset items.
+ * Polls until SUCCEEDED/FAILED. Returns [] on any failure.
+ */
+async function runActor(actorId: string, input: Record<string, any>, timeoutMs = 5 * 60 * 1000, itemLimit = 500): Promise<any[]> {
+  try {
+    const run = await Actor.start(actorId, input);
+    const start = Date.now();
+    let poll = 2500;
+    while (Date.now() - start < timeoutMs) {
+      const runInfo = await Actor.apifyClient.run(run.id).get();
+      if (!runInfo) break;
+      if (runInfo.status === 'SUCCEEDED') {
+        const dataset = await Actor.apifyClient.dataset(runInfo.defaultDatasetId!).listItems({ limit: itemLimit });
+        return dataset.items as any[];
+      }
+      if (['FAILED', 'ABORTED', 'TIMED_OUT'].includes(runInfo.status!)) break;
+      await new Promise(r => setTimeout(r, poll));
+      poll = Math.min(poll * 1.4, 12000);
+    }
+  } catch (e: any) {
+    console.error(`[runActor] ${actorId} error:`, e.message);
+  }
+  return [];
 }
 
 /**
@@ -422,10 +503,7 @@ async function handleSearchWeb({ query, num_results = 10 }: { query: string; num
   const cost = PRICING.SEARCH_WEB.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.SEARCH_WEB.event, 1);
-  const key = process.env.SERPAPI_KEY;
-  if (!key) throw new Error('SERPAPI_KEY not configured');
-  const response = await axios.get('https://serpapi.com/search', { params: { q: query, api_key: key, engine: 'google', num: Math.min(num_results, 20) }, timeout: 30000 });
-  const results = response.data.organic_results?.map((r: any) => ({ title: r.title, link: r.link, snippet: r.snippet })) || [];
+  const results = await smartSearch(query, Math.min(num_results, 20));
   graphClient.ingest('search_web', { query, results });
   return { content: [{ type: 'text', text: JSON.stringify({ query, results, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
 }
@@ -456,335 +534,305 @@ async function handleGetCompanyInfo({ domain, find_emails = true }: { domain: st
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.GET_COMPANY_INFO.event, 1);
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-  let websiteData = {};
-  let emailData = null;
-  try {
-    const res = await axios.get(`https://r.jina.ai/https://${cleanDomain}`, { headers: { Authorization: `Bearer ${process.env.JINA_AI_KEY}` }, timeout: 15000 });
-    const lines = res.data.split('\n');
-    websiteData = { title: lines[0]?.replace(/^Title: /, ''), description: lines[1]?.replace(/^Content: /, '').substring(0, 500) };
-  } catch (e) { websiteData = { error: 'Could not fetch website' }; }
-  if (find_emails) {
-    try {
-      emailData = await scrapeEmailsFromDomain(cleanDomain, 10);
-    } catch (e) { emailData = { error: 'Email search failed' }; }
-  }
-  graphClient.ingest('get_company_info', { domain: cleanDomain, website: websiteData, email_intelligence: emailData });
-  return { content: [{ type: 'text', text: JSON.stringify({ domain: cleanDomain, website: websiteData, email_intelligence: emailData, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining, timestamp: new Date().toISOString() }, null, 2) }] };
+
+  // Check graph first for cached data
+  const cached = await graphClient.queryKnowledge(cleanDomain, 0).catch(() => null);
+
+  const result: any = { domain: cleanDomain, cached_graph_data: cached?.results?.[0] || cached || null };
+
+  // Parallel: website content + emails + contact scraper + Google search for company info
+  await Promise.allSettled([
+    axiosScrape(`https://${cleanDomain}`, 3000).then(text => { result.website_summary = text?.slice(0, 800); }),
+    axiosScrape(`https://${cleanDomain}/about`, 2000).then(text => { if (text) result.about_page = text.slice(0, 600); }),
+    runActor('vdrmota/contact-info-scraper', { startUrls: [{ url: `https://${cleanDomain}` }], maxDepth: 1, maxPagesPerCrawl: 5 }, 60000, 10)
+      .then(items => { const item = items[0]; if (item) { result.phones = item.phones; result.social_links = item.socialMedia; } }),
+    apifySearch(`${cleanDomain} company overview investors funding employees`, 5)
+      .then(res => { result.web_intel = res.slice(0, 3).map(r => ({ title: r.title, url: r.url, snippet: r.snippet })); }),
+    find_emails ? handleFindEmails({ domain: cleanDomain, limit: 5 }).then(r => {
+      try { result.emails = JSON.parse((r.content[0] as any).text).emails; } catch { /* silent */ }
+    }) : Promise.resolve(),
+  ]);
+
+  graphClient.ingest('get_company_info', { domain: cleanDomain, ...result });
+  return { content: [{ type: 'text', text: JSON.stringify({ ...result, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining, timestamp: new Date().toISOString() }, null, 2) }] };
 }
 
 async function handleFindEmails({ domain, limit = 10 }: { domain: string; limit?: number }) {
   const cost = PRICING.FIND_EMAILS.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
-  if (charged > 0) {
-    try {
-      await chargeIfNotOwner(PRICING.FIND_EMAILS.event, 1);
-    } catch (e) {
-      console.error('Charging error:', e);
-    }
-  }
+  if (charged > 0) await chargeIfNotOwner(PRICING.FIND_EMAILS.event, 1);
 
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
   const emailRegex = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+  const junk = /noreply|no-reply|donotreply|example\.com|sentry\.io|\.png@|\.jpg@|wixpress|amazonaws/;
+  const allEmails = new Map<string, { email: string; source: string; confidence: number }>();
 
-  // Pages most likely to contain contact emails
-  const contactPaths = ['', '/contact', '/contact-us', '/about', '/about-us', '/team', '/support', '/help'];
-  const foundEmails = new Map<string, { email: string; source_url: string; confidence: number }>();
-
-  // Attempt 1: direct axios + cheerio scrape of contact pages (fast, free, no API needed)
-  const scrapeUrl = async (url: string): Promise<void> => {
-    try {
-      const res = await axios.get(url, {
-        timeout: 10000,
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ForageBot/1.0)' },
-        maxRedirects: 3,
-      });
-      const $ = cheerio.load(res.data);
-      const bodyText = $('body').text();
-      const mailtoHrefs: string[] = [];
-      $('a[href^="mailto:"]').each((_, el) => {
-        const href = $(el).attr('href') || '';
-        const addr = href.replace(/^mailto:/i, '').split('?')[0].trim();
-        if (addr) mailtoHrefs.push(addr);
-      });
-
-      const hits = [...(bodyText.match(emailRegex) || []), ...mailtoHrefs];
-      for (const raw of hits) {
-        const email = raw.toLowerCase();
-        if (/noreply|no-reply|donotreply|example\.com|sentry\.io|\.png@|\.jpg@/.test(email)) continue;
-        if (!foundEmails.has(email)) {
-          const isDomainMatch = email.endsWith(`@${cleanDomain}`);
-          const isMailto = mailtoHrefs.map(m => m.toLowerCase()).includes(email);
-          const confidence = isDomainMatch ? (isMailto ? 0.95 : 0.85) : 0.60;
-          foundEmails.set(email, { email, source_url: url, confidence });
-        }
-      }
-    } catch {
-      // Silently skip unreachable pages
+  const addEmail = (raw: string, source: string, baseConf: number) => {
+    const email = raw.toLowerCase().trim();
+    if (junk.test(email) || email.length > 80) return;
+    if (!allEmails.has(email) || allEmails.get(email)!.confidence < baseConf) {
+      const isDomain = email.endsWith(`@${cleanDomain}`);
+      allEmails.set(email, { email, source, confidence: isDomain ? Math.max(baseConf, 0.85) : baseConf });
     }
   };
 
-  await Promise.allSettled(
-    contactPaths.map(path => scrapeUrl(`https://${cleanDomain}${path}`))
-  );
+  // Fire all sources IN PARALLEL — no waiting for one to finish before starting next
+  const contactPaths = ['', '/contact', '/contact-us', '/about', '/about-us', '/team', '/support', '/help'];
 
-  // Attempt 2: if we still need more results and have an Apify token, use apify/cheerio-scraper
-  if (foundEmails.size < limit) {
-    const apifyToken = process.env.APIFY_TOKEN || process.env.APIFY_API_TOKEN;
-    if (apifyToken) {
+  await Promise.allSettled([
+
+    // Source 1: Direct cheerio scrape of contact pages (instant, zero cost)
+    Promise.allSettled(contactPaths.map(async (p) => {
       try {
-        const startUrls = contactPaths.slice(0, 4).map(path => ({ url: `https://${cleanDomain}${path}` }));
-        const run = await Actor.start('apify/cheerio-scraper', {
-          startUrls,
-          pageFunction: `async function pageFunction(context) {
-            const { $, request } = context;
-            const emailRegex = /[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/g;
-            const text = $('body').text();
-            const mailtoEmails = [];
-            $('a[href^="mailto:"]').each((_, el) => {
-              const href = $(el).attr('href') || '';
-              const addr = href.replace(/^mailto:/i, '').split('?')[0].trim();
-              if (addr) mailtoEmails.push(addr);
-            });
-            const found = [...(text.match(emailRegex) || []), ...mailtoEmails];
-            return { url: request.url, emails: [...new Set(found)] };
-          }`,
-          maxRequestsPerCrawl: 6,
-          maxConcurrency: 3,
+        const res = await axios.get(`https://${cleanDomain}${p}`, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0' }, maxRedirects: 2 });
+        const $ = cheerio.load(res.data);
+        $('a[href^="mailto:"]').each((_, el) => {
+          const addr = ($(el).attr('href') || '').replace(/^mailto:/i, '').split('?')[0].trim();
+          if (addr) addEmail(addr, `mailto:${cleanDomain}${p}`, 0.95);
         });
+        ($('body').text().match(emailRegex) || []).forEach(e => addEmail(e, `scrape:${cleanDomain}${p}`, 0.80));
+      } catch { /* silent */ }
+    })),
 
-        const actorTimeout = 60000;
-        const actorStart = Date.now();
-        let pollInterval = 2000;
-        while (Date.now() - actorStart < actorTimeout) {
-          const runInfo = await Actor.apifyClient.run(run.id).get();
-          if (!runInfo) break;
-          if (runInfo.status === 'SUCCEEDED') {
-            const result = await Actor.apifyClient.dataset(runInfo.defaultDatasetId!).listItems({ limit: 50 });
-            for (const item of result.items as any[]) {
-              for (const raw of (item.emails || []) as string[]) {
-                const email = raw.toLowerCase();
-                if (/noreply|no-reply|donotreply|example\.com|sentry\.io|\.png@|\.jpg@/.test(email)) continue;
-                if (!foundEmails.has(email)) {
-                  const isDomainMatch = email.endsWith(`@${cleanDomain}`);
-                  foundEmails.set(email, { email, source_url: item.url, confidence: isDomainMatch ? 0.80 : 0.55 });
-                }
-              }
-            }
-            break;
-          }
-          if (['FAILED', 'ABORTED', 'TIMED_OUT'].includes(runInfo.status!)) break;
-          await new Promise(r => setTimeout(r, pollInterval));
-          pollInterval = Math.min(pollInterval * 1.5, 10000);
-        }
-      } catch (e) {
-        console.error('[find_emails] Apify cheerio-scraper fallback error:', e);
-      }
-    }
-  }
+    // Source 2: vdrmota/contact-info-scraper — dedicated email extractor
+    runActor('vdrmota/contact-info-scraper', {
+      startUrls: contactPaths.slice(0, 4).map(p => ({ url: `https://${cleanDomain}${p}` })),
+      maxDepth: 1, maxPagesPerCrawl: 8,
+    }, 90000).then(items => {
+      items.forEach((item: any) => {
+        (item.emails || []).forEach((e: string) => addEmail(e, 'contact-info-scraper', 0.85));
+      });
+    }),
 
-  // Sort: domain-matching emails first, then by confidence desc, then cap at limit
-  const sorted = Array.from(foundEmails.values())
-    .sort((a, b) => {
-      const aDomain = a.email.endsWith(`@${cleanDomain}`) ? 1 : 0;
-      const bDomain = b.email.endsWith(`@${cleanDomain}`) ? 1 : 0;
-      if (bDomain !== aDomain) return bDomain - aDomain;
-      return b.confidence - a.confidence;
-    })
+    // Source 3: apify/cheerio-scraper with email regex pageFunction
+    runActor('apify/cheerio-scraper', {
+      startUrls: [{ url: `https://${cleanDomain}` }],
+      pageFunction: `async function pageFunction({ $, request }) {
+        const re = /[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/g;
+        const mailtos = []; $('a[href^="mailto:"]').each((_,el) => { const h=($(el).attr('href')||'').replace(/^mailto:/i,'').split('?')[0].trim(); if(h) mailtos.push(h); });
+        return { url: request.url, emails: [...new Set([...(($('body').text().match(re))||[]), ...mailtos])] };
+      }`,
+      maxRequestsPerCrawl: 10, maxConcurrency: 5, linkSelector: 'a[href*="contact"],a[href*="about"],a[href*="team"]',
+    }, 90000).then(items => {
+      items.forEach((item: any) => (item.emails || []).forEach((e: string) => addEmail(e, 'cheerio-scraper', 0.80)));
+    }),
+
+    // Source 4: Google search — "@domain.com" and "site:domain.com email"
+    apifySearch(`"@${cleanDomain}" OR site:${cleanDomain} email contact`, 20).then(results => {
+      results.forEach(r => (r.snippet.match(emailRegex) || []).forEach(e => addEmail(e, 'google-search', 0.70)));
+    }),
+
+    // Source 5: bebity/email-finder — dedicated finder actor
+    runActor('bebity/email-finder', { domain: cleanDomain, limit: Math.min(limit * 2, 50) }, 90000).then(items => {
+      items.forEach((item: any) => {
+        if (item.email) addEmail(item.email, 'email-finder', item.verified ? 0.92 : 0.75);
+      });
+    }),
+
+  ]);
+
+  const sorted = Array.from(allEmails.values())
+    .sort((a, b) => b.confidence - a.confidence)
     .slice(0, limit);
 
   graphClient.ingest('find_emails', { domain: cleanDomain, emails: sorted });
 
-  return {
-    content: [{
-      type: 'text',
-      text: JSON.stringify({
-        domain: cleanDomain,
-        emails_found: sorted.length,
-        emails: sorted,
-        method: 'web_scrape',
-        cost_usd: cost,
-        free_credit_used: freeUsed,
-        free_credit_remaining: remaining,
-      }, null, 2),
-    }],
-  };
+  return { content: [{ type: 'text', text: JSON.stringify({
+    domain: cleanDomain, emails_found: sorted.length, emails: sorted,
+    sources_used: ['direct-scrape', 'contact-info-scraper', 'cheerio-scraper', 'google-search', 'email-finder'],
+    cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining,
+  }, null, 2) }] };
 }
 
-async function handleFindLocalLeads({ keyword, location, radius = 5000, max_results = 50, enrich_emails = true }: any) {
+async function handleFindLocalLeads({ keyword, location, max_results = 100, enrich_emails = true }: any) {
   const cost = PRICING.FIND_LOCAL_LEADS.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.FIND_LOCAL_LEADS.event, 1);
 
-  // Step 1: Google Maps scraper via Apify — no API key needed
-  let places: any[] = [];
-  try {
-    const run = await Actor.start('apify/google-maps-scraper', {
-      searchStringsArray: [`${keyword} in ${location}`],
-      maxCrawledPlacesPerSearch: Math.min(max_results, 200),
-      includeHistogram: false,
-      includeOpeningHours: false,
-      includePeopleAlsoSearch: false,
-      language: 'en',
-    });
-    const timeout = 5 * 60 * 1000;
-    const start = Date.now();
-    let poll = 3000;
-    while (Date.now() - start < timeout) {
-      const runInfo = await Actor.apifyClient.run(run.id).get();
-      if (!runInfo) break;
-      if (runInfo.status === 'SUCCEEDED') {
-        const dataset = await Actor.apifyClient.dataset(runInfo.defaultDatasetId!).listItems({ limit: 250 });
-        places = (dataset.items as any[]).slice(0, max_results).map((p: any) => ({
-          name: p.title || p.name,
-          address: p.address || p.street,
-          phone: p.phone || p.phoneUnformatted,
-          website: p.website,
-          rating: p.totalScore || p.rating,
-          reviews: p.reviewsCount,
-          category: p.categoryName || keyword,
-          location: { lat: p.location?.lat, lng: p.location?.lng },
-          google_maps_url: p.url,
-        }));
-        break;
-      }
-      if (['FAILED', 'ABORTED', 'TIMED_OUT'].includes(runInfo.status!)) break;
-      await new Promise(r => setTimeout(r, poll));
-      poll = Math.min(poll * 1.4, 12000);
-    }
-  } catch (e: any) {
-    console.error('[find_local_leads] maps scraper error:', e.message);
-  }
+  const query = `${keyword} in ${location}`;
+  const limit = Math.min(max_results, 200);
+  const placeMap = new Map<string, any>(); // dedup by name+address
 
-  // Fallback: Google search if maps scraper failed
+  const addPlace = (p: any) => {
+    const key = `${(p.name || '').toLowerCase()}|${(p.address || '').toLowerCase()}`;
+    if (!placeMap.has(key)) placeMap.set(key, p);
+    else Object.assign(placeMap.get(key), p); // merge fields from multiple sources
+  };
+
+  // Fire all 4 sources IN PARALLEL — skill says: compass/crawler-google-places → poidata/google-maps-email-extractor → vdrmota/contact-info-scraper
+  await Promise.allSettled([
+
+    // Source 1: apify/google-maps-scraper — primary, high volume
+    runActor('apify/google-maps-scraper', {
+      searchStringsArray: [query], maxCrawledPlacesPerSearch: limit,
+      includeHistogram: false, includeOpeningHours: false, language: 'en',
+    }, 6 * 60000, 250).then(items => items.forEach((p: any) => addPlace({
+      name: p.title || p.name, address: p.address || p.street,
+      phone: p.phone || p.phoneUnformatted, website: p.website,
+      rating: p.totalScore || p.rating, reviews: p.reviewsCount,
+      google_maps_url: p.url, category: p.categoryName || keyword,
+    }))),
+
+    // Source 2: compass/crawler-google-places — skill's primary lead-gen actor, includes emails
+    runActor('compass/crawler-google-places', {
+      searchString: query, maxPlaces: limit, language: 'en',
+    }, 6 * 60000, 250).then(items => items.forEach((p: any) => addPlace({
+      name: p.title || p.name, address: p.address,
+      phone: p.phone, website: p.website, email: p.email,
+      rating: p.rating, reviews: p.reviewCount,
+    }))),
+
+    // Source 3: poidata/google-maps-email-extractor — specifically for emails from maps listings
+    runActor('poidata/google-maps-email-extractor', {
+      searchString: query, maxPlaces: Math.min(limit, 100),
+    }, 5 * 60000, 150).then(items => items.forEach((p: any) => {
+      addPlace({ name: p.title || p.name, address: p.address, phone: p.phone, website: p.website, emails: p.emails || (p.email ? [p.email] : []) });
+    })),
+
+    // Source 4: lukaskrivka/google-maps-with-contact-details — email extractor from skill list
+    runActor('lukaskrivka/google-maps-with-contact-details', {
+      searchString: query, maxPlaces: Math.min(limit, 100),
+    }, 5 * 60000, 150).then(items => items.forEach((p: any) => {
+      addPlace({ name: p.title || p.name, address: p.address, phone: p.phone, website: p.website, emails: p.emails || [] });
+    })),
+
+  ]);
+
+  let places = Array.from(placeMap.values()).slice(0, limit);
+
+  // Fallback if all actors failed
   if (places.length === 0) {
-    const results = await apifySearch(`${keyword} ${location} address phone`, Math.min(max_results, 30));
+    const results = await apifySearch(`${keyword} ${location} address phone website`, 30);
     places = results.map(r => ({ name: r.title, website: r.url, snippet: r.snippet }));
   }
 
-  // Step 2: Email enrichment — scrape contact/about pages for each place with a website
+  // Step 2: Email enrichment via vdrmota/contact-info-scraper on websites that don't have emails yet
   if (enrich_emails) {
-    const websitesWithDomains = places
-      .filter(p => p.website)
-      .slice(0, Math.min(places.length, 100)); // cap to 100 enrichments
+    const needsEmail = places.filter(p => p.website && (!p.emails || p.emails.length === 0)).slice(0, 80);
+    if (needsEmail.length > 0) {
+      const emailRegex = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+      const junk = /noreply|no-reply|example\.com|sentry\.io|amazonaws/;
 
-    await Promise.allSettled(websitesWithDomains.map(async (place) => {
-      try {
-        const domain = new URL(place.website).hostname.replace(/^www\./, '');
-        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-        const junkDomains = /noreply|example|sentry|amazonaws|wix\.com|squarespace/;
-        const emails = new Set<string>();
+      await Promise.allSettled([
+        // Batch scrape with vdrmota/contact-info-scraper
+        runActor('vdrmota/contact-info-scraper', {
+          startUrls: needsEmail.slice(0, 40).map(p => ({ url: p.website })),
+          maxDepth: 1, maxPagesPerCrawl: 80,
+        }, 4 * 60000, 100).then(items => {
+          items.forEach((item: any) => {
+            const place = needsEmail.find(p => item.url?.includes(new URL(p.website).hostname));
+            if (place) place.emails = (item.emails || []).filter((e: string) => !junk.test(e)).slice(0, 5);
+          });
+        }),
 
-        await Promise.allSettled(['/contact', '/contact-us', '/about', ''].map(async (slug) => {
+        // Direct scrape for remainder
+        Promise.allSettled(needsEmail.slice(40).map(async (place) => {
           try {
-            const res = await axios.get(`https://${domain}${slug}`, {
-              timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0' }, maxRedirects: 2,
-            });
-            const found = res.data.match(emailRegex) || [];
-            found.filter((e: string) => e.endsWith(domain) || !junkDomains.test(e)).forEach((e: string) => emails.add(e));
+            const domain = new URL(place.website).hostname;
+            const res = await axios.get(`https://${domain}/contact`, { timeout: 6000, headers: { 'User-Agent': 'Mozilla/5.0' }, maxRedirects: 2 });
+            const found = (res.data.match(emailRegex) || []).filter((e: string) => !junk.test(e));
+            if (found.length) place.emails = [...new Set(found)].slice(0, 5);
           } catch { /* silent */ }
-        }));
-
-        if (emails.size > 0) place.emails = Array.from(emails).slice(0, 5);
-        place.email_domain = domain;
-      } catch { /* silent */ }
-    }));
+        })),
+      ]);
+    }
   }
 
   graphClient.ingest('find_local_leads', { keyword, location, leads: places });
-  return { content: [{ type: 'text', text: JSON.stringify({ keyword, location, leads_found: places.length, enrich_emails, leads: places, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
+  return { content: [{ type: 'text', text: JSON.stringify({
+    keyword, location, leads_found: places.length,
+    sources_used: ['google-maps-scraper', 'crawler-google-places', 'google-maps-email-extractor', 'google-maps-with-contact-details', 'contact-info-scraper'],
+    leads: places, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining,
+  }, null, 2) }] };
 }
 
 async function handleFindLeads(args: any) {
-  const { job_title, location, industry, company_size, keywords, company_website, num_leads = 25, email_status } = args;
+  const { job_title, location, industry, company_size, keywords, company_website, num_leads = 100 } = args;
   const chargeUnits = Math.ceil(num_leads / 100);
   const cost = PRICING.FIND_LEADS.charge * chargeUnits;
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.FIND_LEADS.event, chargeUnits);
 
-  // Build a targeted Google search query from the provided criteria
-  const queryParts: string[] = [];
-  if (job_title) queryParts.push(`"${job_title}"`);
-  if (industry) queryParts.push(industry);
-  if (location) queryParts.push(location);
-  if (company_size) queryParts.push(`${company_size} employees`);
-  if (keywords) queryParts.push(keywords);
-  if (company_website) queryParts.push(`site:${company_website}`);
-  // Bias results toward company/contact pages rather than job boards
-  queryParts.push('company OR "about us" OR "contact us" OR "our team"');
-  const searchQuery = queryParts.join(' ');
+  const searchQuery = [
+    job_title ? `"${job_title}"` : '',
+    industry || '', location || '', company_size ? `${company_size} employees` : '',
+    keywords || '', company_website ? `site:${company_website}` : '',
+  ].filter(Boolean).join(' ');
 
-  // Use apify/google-search-scraper — a free Apify actor requiring no external API key
-  const numResults = Math.min(Math.max(num_leads, 10), 100);
-  const run = await Actor.start('apify/google-search-scraper', {
-    queries: searchQuery,
-    resultsPerPage: numResults,
-    maxPagesPerQuery: 1,
-    languageCode: '',
-    countryCode: '',
-    saveHtml: false,
-    saveHtmlToKeyValueStore: false,
-  });
+  const leadMap = new Map<string, any>(); // dedup by email or website
+  const addLead = (lead: any) => {
+    const key = lead.email || lead.website || lead.url || lead.name || Math.random().toString();
+    if (!leadMap.has(key)) leadMap.set(key, lead);
+    else Object.assign(leadMap.get(key), lead);
+  };
 
-  const timeout = 5 * 60 * 1000; const startTime = Date.now(); let pollInterval = 2000;
-  while (true) {
-    if (Date.now() - startTime > timeout) throw new Error(`Timeout (run ID: ${run.id})`);
-    const runInfo = await Actor.apifyClient.run(run.id).get();
-    if (!runInfo) throw new Error('Failed to get run info');
-    if (runInfo.status === 'SUCCEEDED') {
-      const allItems: any[] = []; let offset = 0;
-      while (true) {
-        const result = await Actor.apifyClient.dataset(runInfo.defaultDatasetId!).listItems({ offset, limit: 250 });
-        const items = result.items ?? []; allItems.push(...items); offset += items.length;
-        if (items.length === 0 || items.length < 250) break;
-      }
+  // Fire all sources IN PARALLEL
+  await Promise.allSettled([
 
-      // Each item from google-search-scraper has an `organicResults` array
-      const organicResults: any[] = [];
-      for (const item of allItems) {
-        if (Array.isArray(item.organicResults)) {
-          organicResults.push(...item.organicResults);
-        }
-      }
+    // Source 1: code_crafter/leads-finder — Apollo alternative with emails + LinkedIn
+    runActor('code_crafter/leads-finder', {
+      searchQuery, jobTitle: job_title, location, industry,
+      limit: Math.min(num_leads, 100),
+    }, 5 * 60000, 200).then(items => items.forEach((l: any) => addLead({
+      name: l.fullName || l.name, email: l.email || l.workEmail || l.personalEmail,
+      title: l.jobTitle || l.title || job_title, company: l.company || l.companyName,
+      linkedin: l.linkedinUrl || l.linkedin, phone: l.phone || l.mobilePhone,
+      location: l.location || l.city, source: 'leads-finder',
+    }))),
 
-      // Parse each organic result into a lead record
-      const formattedLeads = organicResults.slice(0, num_leads).map((r: any) => {
-        // Derive a clean company name from the page title (strip common suffixes)
-        const rawTitle: string = r.title || '';
-        const companyName = rawTitle
-          .replace(/\s*[-|–]\s*.*$/, '')   // strip "- Site Name" or "| Tag"
-          .replace(/\s*(Inc\.?|LLC|Ltd\.?|Corp\.?|Co\.?)$/i, '')
-          .trim() || rawTitle;
+    // Source 2: peakydev/leads-scraper-ppe — $1/1k with emails, similar to Apollo
+    runActor('peakydev/leads-scraper-ppe', {
+      searchQuery, jobTitle: job_title, location, industry,
+      maxResults: Math.min(num_leads, 100),
+    }, 5 * 60000, 200).then(items => items.forEach((l: any) => addLead({
+      name: l.fullName || l.name, email: l.workEmail || l.email || l.personalEmail,
+      title: l.jobTitle || job_title, company: l.companyName || l.company,
+      linkedin: l.linkedinUrl, phone: l.mobilePhone, source: 'leads-scraper-ppe',
+    }))),
 
-        // Attempt to extract a location hint from the snippet
-        const snippet: string = r.description || r.snippet || '';
-        const locationHint = location || (() => {
-          const m = snippet.match(/\b([A-Z][a-z]+(?:,\s*[A-Z]{2})?)\b/);
-          return m ? m[1] : undefined;
-        })();
+    // Source 3: olympus/b2b-leads-finder — $1/1k like Apollo/LinkedIn
+    runActor('olympus/b2b-leads-finder', {
+      searchQuery, location, limit: Math.min(num_leads, 100),
+    }, 5 * 60000, 200).then(items => items.forEach((l: any) => addLead({
+      name: l.name, email: l.email, title: l.title || job_title,
+      company: l.company, linkedin: l.linkedin, source: 'b2b-leads-finder',
+    }))),
 
-        let hostname = '';
-        try { hostname = new URL(r.url || r.link || '').hostname.replace(/^www\./, ''); } catch { /* ignore */ }
+    // Source 4: curious_coder/apollo-leads-scraper — Apollo without API key
+    runActor('curious_coder/apollo-leads-scraper', {
+      jobTitle: job_title, location, industry, companySize: company_size,
+      limit: Math.min(num_leads, 100),
+    }, 5 * 60000, 200).then(items => items.forEach((l: any) => addLead({
+      name: l.name, email: l.email, title: l.title || job_title,
+      company: l.organization?.name || l.company, linkedin: l.linkedin_url,
+      location: l.city || l.location, source: 'apollo-scraper',
+    }))),
 
-        return {
-          company: companyName,
-          website: hostname || r.url || r.link || '',
-          url: r.url || r.link || '',
-          title: job_title || undefined,
-          location: locationHint,
-          industry: industry || undefined,
-          company_size: company_size || undefined,
-          snippet: snippet.slice(0, 200) || undefined,
-          source: 'google-search',
-        };
+    // Source 5: Google search as broad fallback
+    apifySearch(`${searchQuery} email contact`, Math.min(num_leads, 30)).then(results => {
+      const emailRegex = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+      results.forEach(r => {
+        const emails = r.snippet.match(emailRegex) || [];
+        emails.forEach(email => addLead({
+          email, website: r.url, company: r.title.replace(/\s*[-|].*$/, '').trim(),
+          title: job_title, location, source: 'google-search',
+        }));
+        if (!emails.length) addLead({ website: r.url, company: r.title.replace(/\s*[-|].*$/, '').trim(), title: job_title, location, source: 'google-search' });
       });
+    }),
 
-      graphClient.ingest('find_leads', { leads: formattedLeads });
-      return { content: [{ type: 'text', text: JSON.stringify({ query: { job_title, location, industry, search_query: searchQuery }, leads_found: formattedLeads.length, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining, leads: formattedLeads, actor_run_id: run.id }, null, 2) }] };
-    }
-    if (['FAILED', 'TIMED_OUT', 'ABORTED'].includes(runInfo.status!)) throw new Error(`Leads finder ${runInfo.status}`);
-    await new Promise(r => setTimeout(r, pollInterval));
-    pollInterval = Math.min(pollInterval * 1.5, 15000);
-  }
+  ]);
+
+  const leads = Array.from(leadMap.values()).slice(0, num_leads);
+  graphClient.ingest('find_leads', { leads });
+
+  return { content: [{ type: 'text', text: JSON.stringify({
+    query: { job_title, location, industry, company_size },
+    leads_found: leads.length,
+    sources_used: ['leads-finder', 'leads-scraper-ppe', 'b2b-leads-finder', 'apollo-scraper', 'google-search'],
+    cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining,
+    leads,
+  }, null, 2) }] };
 }
 
 // ==========================================
@@ -1034,7 +1082,7 @@ async function handleCallActor({ actor_id, input, timeout_secs = 120, max_cost_u
 }
 
 // ==========================================
-// ORIGINAL SKILL HANDLERS
+// SKILL HANDLERS — all free, multi-actor parallel
 // ==========================================
 
 async function handleSkillCompanyDossier({ domain }: { domain: string }) {
@@ -1042,31 +1090,57 @@ async function handleSkillCompanyDossier({ domain }: { domain: string }) {
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_COMPANY_DOSSIER.event, 1);
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-  try {
-    const apolloKey = process.env.APOLLO_API_KEY;
-    const jinaKey = process.env.JINA_AI_KEY;
-    const [websiteRaw, emailsRaw] = await Promise.allSettled([
-      jinaKey
-        ? axios.get(`https://r.jina.ai/https://${cleanDomain}`, { headers: { Authorization: `Bearer ${jinaKey}` }, timeout: 15000 })
-        : Promise.reject('No Jina key'),
-      apolloKey
-        ? axios.post('https://api.apollo.io/v1/mixed_people/search',
-            { q_organization_domains: cleanDomain, page: 1, per_page: 10 },
-            { headers: { 'x-api-key': apolloKey, 'Content-Type': 'application/json' }, timeout: 15000 })
-        : Promise.reject('No Apollo key'),
-    ]);
-    const website = websiteRaw.status === 'fulfilled'
-      ? { title: websiteRaw.value.data.split('\n')[0]?.replace(/^Title: /, ''), summary: websiteRaw.value.data.split('\n').slice(1).join(' ').substring(0, 800) }
-      : { note: 'Website data unavailable — use scrape_page directly', url: `https://${cleanDomain}` };
-    const emailData = emailsRaw.status === 'fulfilled' ? emailsRaw.value.data.people : null;
-    const contacts = emailData?.slice(0, 10).map((p: any) => ({ name: `${p.first_name || ''} ${p.last_name || ''}`.trim(), email: p.email, title: p.title, seniority: p.seniority, department: p.departments?.[0], linkedin: p.linkedin_url })) || [];
-    const dossier = { domain: cleanDomain, website_summary: website, key_contacts: contacts, contacts_note: contacts.length === 0 ? 'Contact lookup unavailable — APOLLO_API_KEY may not be configured' : undefined, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining, generated_at: new Date().toISOString() };
-    graphClient.ingest('skill_company_dossier', dossier);
-    return { content: [{ type: 'text', text: JSON.stringify(dossier, null, 2) }] };
-  } catch (err: any) {
-    const fallback = { domain: cleanDomain, website_summary: { note: 'Data temporarily unavailable' }, key_contacts: [], error_detail: err.message, suggestion: `Use scrape_page with url "https://${cleanDomain}" for website content`, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining, generated_at: new Date().toISOString() };
-    return { content: [{ type: 'text', text: JSON.stringify(fallback, null, 2) }] };
-  }
+
+  // Check graph cache
+  const cached = await graphClient.queryKnowledge(cleanDomain, 0).catch(() => null);
+  const dossier: any = { domain: cleanDomain, cached_graph_data: cached?.results?.[0] || cached || null };
+
+  await Promise.allSettled([
+    // Website pages
+    axiosScrape(`https://${cleanDomain}`, 3000).then(t => { dossier.homepage = t?.slice(0, 800); }),
+    axiosScrape(`https://${cleanDomain}/about`, 2000).then(t => { if (t) dossier.about = t.slice(0, 600); }),
+    axiosScrape(`https://${cleanDomain}/pricing`, 1500).then(t => { if (t) dossier.pricing_page = t.slice(0, 600); }),
+
+    // Contact info scraper — emails, phones, socials
+    runActor('vdrmota/contact-info-scraper', {
+      startUrls: [{ url: `https://${cleanDomain}` }, { url: `https://${cleanDomain}/about` }, { url: `https://${cleanDomain}/contact` }],
+      maxDepth: 1, maxPagesPerCrawl: 6,
+    }, 90000, 10).then(items => {
+      if (items[0]) { dossier.phones = items[0].phones; dossier.social_links = items[0].socialMedia; dossier.emails_from_site = items[0].emails; }
+    }),
+
+    // LinkedIn company profile
+    runActor('apify/linkedin-company-scraper', {
+      startUrls: [{ url: `https://www.linkedin.com/company/${cleanDomain.split('.')[0]}` }],
+    }, 90000, 5).then(items => {
+      if (items[0]) dossier.linkedin = { name: items[0].name, description: items[0].description, employees: items[0].staffCount, industry: items[0].industries?.[0], hq: items[0].locations?.[0]?.city };
+    }),
+
+    // Crunchbase — funding, investors
+    runActor('epctex/crunchbase-scraper', {
+      startUrls: [{ url: `https://www.crunchbase.com/organization/${cleanDomain.split('.')[0]}`, method: 'GET' }],
+      maxItems: 5,
+    }, 90000, 5).then(items => {
+      if (items[0]) dossier.funding = { total_raised: items[0].totalFunding, last_round: items[0].lastFundingType, investors: items[0].investors?.slice(0, 5) };
+    }),
+
+    // Google search for company overview + news
+    apifySearch(`${cleanDomain} company overview funding investors employees`, 5).then(res => {
+      dossier.web_intel = res.slice(0, 4).map(r => ({ title: r.title, url: r.url, snippet: r.snippet }));
+    }),
+
+    // Key contacts via find_emails
+    handleFindEmails({ domain: cleanDomain, limit: 8 }).then(r => {
+      try { dossier.key_contacts = JSON.parse((r.content[0] as any).text).emails; } catch { /* silent */ }
+    }),
+  ]);
+
+  dossier.generated_at = new Date().toISOString();
+  dossier.cost_usd = cost;
+  dossier.free_credit_used = freeUsed;
+  dossier.free_credit_remaining = remaining;
+  graphClient.ingest('skill_company_dossier', dossier);
+  return { content: [{ type: 'text', text: JSON.stringify(dossier, null, 2) }] };
 }
 
 async function handleSkillProspectCompany({ domain, seniority = 'senior,director,vp,c_suite' }: any) {
@@ -1074,135 +1148,229 @@ async function handleSkillProspectCompany({ domain, seniority = 'senior,director
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_PROSPECT_COMPANY.event, 1);
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-  const apolloKey = process.env.APOLLO_API_KEY;
-  if (!apolloKey) {
-    return { content: [{ type: 'text', text: JSON.stringify({ domain: cleanDomain, decision_makers_found: 0, contacts: [], note: 'Contact enrichment unavailable — APOLLO_API_KEY not configured. Use find_emails as an alternative.', cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
-  }
-  try {
-    const { data } = await axios.post('https://api.apollo.io/v1/mixed_people/search',
-      { q_organization_domains: cleanDomain, page: 1, per_page: 25 },
-      { headers: { 'x-api-key': apolloKey, 'Content-Type': 'application/json' }, timeout: 15000 }
-    );
-    const seniorityLevels = seniority.split(',').map((s: string) => s.trim().toLowerCase());
-    const decisionMakers = (data.people || [])
-      .filter((p: any) => !p.seniority || seniorityLevels.includes(p.seniority?.toLowerCase()))
-      .slice(0, 15)
-      .map((p: any) => ({ name: `${p.first_name || ''} ${p.last_name || ''}`.trim(), email: p.email, title: p.title, seniority: p.seniority, department: p.departments?.[0], linkedin: p.linkedin_url }));
-    const result = { domain: cleanDomain, decision_makers_found: decisionMakers.length, contacts: decisionMakers, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
-    graphClient.ingest('skill_prospect_company', result);
-    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
-  } catch (err: any) {
-    return { content: [{ type: 'text', text: JSON.stringify({ domain: cleanDomain, decision_makers_found: 0, contacts: [], error_detail: err.message, note: 'Contact lookup temporarily unavailable. Try find_emails as an alternative.', cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
-  }
+  const seniorityLevels = seniority.split(',').map((s: string) => s.trim().toLowerCase());
+
+  const contactMap = new Map<string, any>();
+  const addContact = (c: any) => {
+    const key = c.email || c.linkedin || c.name || Math.random().toString();
+    if (!contactMap.has(key)) contactMap.set(key, c);
+    else Object.assign(contactMap.get(key), c);
+  };
+
+  await Promise.allSettled([
+    // LinkedIn people finder by domain
+    runActor('anchor/linkedin-people-finder', {
+      companyDomain: cleanDomain, seniority: seniorityLevels.join(','), limit: 25,
+    }, 5 * 60000, 50).then(items => items.forEach((p: any) => addContact({
+      name: p.name || p.fullName, email: p.email, title: p.title || p.jobTitle,
+      seniority: p.seniority, linkedin: p.linkedinUrl || p.linkedin, source: 'linkedin-people-finder',
+    }))),
+
+    // Apollo scraper — no API key needed
+    runActor('curious_coder/apollo-leads-scraper', {
+      domain: cleanDomain, limit: 25,
+    }, 5 * 60000, 50).then(items => items.forEach((p: any) => addContact({
+      name: p.name, email: p.email, title: p.title,
+      seniority: p.seniority, linkedin: p.linkedin_url, source: 'apollo-scraper',
+    }))),
+
+    // LinkedIn company scraper to extract employee list
+    runActor('apify/linkedin-company-scraper', {
+      startUrls: [{ url: `https://www.linkedin.com/company/${cleanDomain.split('.')[0]}` }],
+    }, 5 * 60000, 5).then(items => {
+      if (items[0]?.employees) {
+        items[0].employees.slice(0, 15).forEach((e: any) => addContact({
+          name: e.name, title: e.title, linkedin: e.linkedinUrl, source: 'linkedin-company',
+        }));
+      }
+    }),
+
+    // Direct email scraping as fallback
+    handleFindEmails({ domain: cleanDomain, limit: 15 }).then(r => {
+      try {
+        const data = JSON.parse((r.content[0] as any).text);
+        data.emails?.forEach((e: any) => addContact({ email: e.email, source: 'email-scraper', confidence: e.confidence }));
+      } catch { /* silent */ }
+    }),
+  ]);
+
+  const contacts = Array.from(contactMap.values())
+    .filter(c => c.name || c.email)
+    .slice(0, 20);
+
+  const result = {
+    domain: cleanDomain, seniority_filter: seniorityLevels,
+    decision_makers_found: contacts.length, contacts,
+    sources_used: ['linkedin-people-finder', 'apollo-scraper', 'linkedin-company', 'email-scraper'],
+    cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining,
+  };
+  graphClient.ingest('skill_prospect_company', result);
+  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
 }
 
 async function handleSkillOutboundList({ job_title, location, industry, company_size }: any) {
   const cost = PRICING.SKILL_OUTBOUND_LIST.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_OUTBOUND_LIST.event, 1);
-  try {
-    const run = await Actor.start('code_crafter/leads-finder', { leadsCount: 100, fileName: `outbound_${Date.now()}`, jobTitle: job_title, locationInclude: location || '', emailStatus: 'verified', size: company_size || '', industry: industry || '' });
-    const timeout = 8 * 60 * 1000; const startTime = Date.now(); let pollInterval = 3000;
-    while (true) {
-      if (Date.now() - startTime > timeout) {
-        return { content: [{ type: 'text', text: JSON.stringify({ job_title, location, industry, total_leads: 0, leads: [], note: 'Lead generation timed out. The actor is taking longer than expected. Try again or use find_leads for a smaller batch.', cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining, export_ready: false }, null, 2) }] };
-      }
-      const runInfo = await Actor.apifyClient.run(run.id).get();
-      if (!runInfo) {
-        return { content: [{ type: 'text', text: JSON.stringify({ job_title, location, industry, total_leads: 0, leads: [], note: 'Could not retrieve run info from lead generation actor.', cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining, export_ready: false }, null, 2) }] };
-      }
-      if (runInfo.status === 'SUCCEEDED') {
-        const result = await Actor.apifyClient.dataset(runInfo.defaultDatasetId!).listItems({ limit: 100 });
-        const leads = result.items.map((lead: any) => ({ name: `${lead.first_name || ''} ${lead.last_name || ''}`.trim() || lead.name, title: lead.title || lead.jobTitle, company: lead.company || lead.organization, email: lead.email, email_verified: lead.emailStatus === 'verified', linkedin: lead.linkedin || lead.linkedinUrl, location: lead.location, company_size: lead.companySize, website: lead.website, phone: lead.phone }));
-        graphClient.ingest('skill_outbound_list', { leads });
-        return { content: [{ type: 'text', text: JSON.stringify({ job_title, location, industry, total_leads: leads.length, verified_emails: leads.filter((l: any) => l.email_verified).length, leads, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining, export_ready: true }, null, 2) }] };
-      }
-      if (['FAILED', 'ABORTED', 'TIMED_OUT'].includes(runInfo.status!)) {
-        return { content: [{ type: 'text', text: JSON.stringify({ job_title, location, industry, total_leads: 0, leads: [], note: `Lead generation actor ended with status: ${runInfo.status}. Try again or use find_leads with a smaller batch.`, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining, export_ready: false }, null, 2) }] };
-      }
-      await new Promise(r => setTimeout(r, pollInterval));
-      pollInterval = Math.min(pollInterval * 1.5, 15000);
-    }
-  } catch (err: any) {
-    return { content: [{ type: 'text', text: JSON.stringify({ job_title, location, industry, total_leads: 0, leads: [], error_detail: err.message, note: 'Lead generation temporarily unavailable. Use find_leads as a fallback for smaller batches.', cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining, export_ready: false }, null, 2) }] };
-  }
+
+  const leadMap = new Map<string, any>();
+  const addLead = (lead: any) => {
+    const key = lead.email || lead.linkedin || lead.name || Math.random().toString();
+    if (!leadMap.has(key)) leadMap.set(key, lead);
+    else Object.assign(leadMap.get(key), lead);
+  };
+  const normalize = (l: any, src: string) => ({
+    name: l.fullName || l.name, email: l.workEmail || l.email || l.personalEmail,
+    title: l.jobTitle || l.title || job_title, company: l.companyName || l.company || l.organization?.name,
+    linkedin: l.linkedinUrl || l.linkedin_url || l.linkedin,
+    phone: l.mobilePhone || l.phone, location: l.location || l.city,
+    company_size: l.companySize || company_size, source: src,
+  });
+
+  // 5 actors in parallel — cast as wide a net as possible
+  await Promise.allSettled([
+    runActor('code_crafter/leads-finder', {
+      jobTitle: job_title, locationInclude: location || '', emailStatus: 'verified',
+      size: company_size || '', industry: industry || '', leadsCount: 100,
+    }, 8 * 60000, 200).then(items => items.forEach((l: any) => addLead(normalize(l, 'leads-finder')))),
+
+    runActor('peakydev/leads-scraper-ppe', {
+      jobTitle: job_title, location, industry, maxResults: 100,
+    }, 6 * 60000, 200).then(items => items.forEach((l: any) => addLead(normalize(l, 'leads-scraper-ppe')))),
+
+    runActor('curious_coder/apollo-leads-scraper', {
+      jobTitle: job_title, location, industry, companySize: company_size, limit: 100,
+    }, 6 * 60000, 200).then(items => items.forEach((l: any) => addLead(normalize(l, 'apollo-scraper')))),
+
+    runActor('easyapi/b2b-leads-hunter', {
+      jobTitle: job_title, location, industry, limit: 100,
+    }, 6 * 60000, 200).then(items => items.forEach((l: any) => addLead(normalize(l, 'b2b-leads-hunter')))),
+
+    runActor('anchor/linkedin-people-finder', {
+      jobTitle: job_title, location, industry, seniority: 'senior,director,vp,c_suite', limit: 100,
+    }, 6 * 60000, 200).then(items => items.forEach((l: any) => addLead(normalize(l, 'linkedin-people-finder')))),
+  ]);
+
+  const leads = Array.from(leadMap.values()).filter(l => l.name || l.email).slice(0, 200);
+  graphClient.ingest('skill_outbound_list', { leads });
+  return { content: [{ type: 'text', text: JSON.stringify({
+    job_title, location, industry,
+    total_leads: leads.length,
+    verified_emails: leads.filter(l => l.email).length,
+    sources_used: ['leads-finder', 'leads-scraper-ppe', 'apollo-scraper', 'b2b-leads-hunter', 'linkedin-people-finder'],
+    leads, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining, export_ready: true,
+  }, null, 2) }] };
 }
 
 async function handleSkillLocalMarketMap({ business_type, location }: any) {
   const cost = PRICING.SKILL_LOCAL_MARKET_MAP.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_LOCAL_MARKET_MAP.event, 1);
-  const key = process.env.GOOGLE_PLACES_API_KEY;
-  if (!key) {
-    // Graceful fallback: use web search to find businesses instead
-    try {
-      const searchResults = await serpSearch(`${business_type} in ${location}`, 10);
-      const businesses = searchResults.map((r: any) => ({ name: r.title, url: r.link, snippet: r.snippet }));
-      return { content: [{ type: 'text', text: JSON.stringify({ business_type, location, total_found: businesses.length, businesses, note: 'Google Places API not configured — results sourced from web search. For full address/phone data, GOOGLE_PLACES_API_KEY is required.', cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
-    } catch (searchErr: any) {
-      return { content: [{ type: 'text', text: JSON.stringify({ business_type, location, total_found: 0, businesses: [], note: 'Local market mapping requires GOOGLE_PLACES_API_KEY. Web search fallback also unavailable.', cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
-    }
+
+  const query = `${business_type} in ${location}`;
+  const placeMap = new Map<string, any>();
+  const addPlace = (p: any) => {
+    const key = `${(p.name || '').toLowerCase()}|${(p.address || '').toLowerCase()}`;
+    if (!placeMap.has(key)) placeMap.set(key, p);
+    else Object.assign(placeMap.get(key), p);
+  };
+
+  await Promise.allSettled([
+    runActor('apify/google-maps-scraper', {
+      searchStringsArray: [query], maxCrawledPlacesPerSearch: 60,
+      includeHistogram: false, includeOpeningHours: false, language: 'en',
+    }, 6 * 60000, 150).then(items => items.forEach((p: any) => addPlace({
+      name: p.title || p.name, address: p.address || p.street,
+      phone: p.phone || p.phoneUnformatted, website: p.website,
+      rating: p.totalScore || p.rating, reviews: p.reviewsCount,
+      google_maps_url: p.url, category: p.categoryName || business_type,
+    }))),
+
+    runActor('compass/crawler-google-places', {
+      searchString: query, maxPlaces: 60, language: 'en',
+    }, 6 * 60000, 150).then(items => items.forEach((p: any) => addPlace({
+      name: p.title || p.name, address: p.address,
+      phone: p.phone, website: p.website, email: p.email,
+      rating: p.rating, reviews: p.reviewCount,
+    }))),
+
+    runActor('poidata/google-maps-email-extractor', {
+      searchString: query, maxPlaces: 60,
+    }, 5 * 60000, 100).then(items => items.forEach((p: any) => addPlace({
+      name: p.title || p.name, address: p.address,
+      phone: p.phone, website: p.website, emails: p.emails || (p.email ? [p.email] : []),
+    }))),
+
+    // Yelp for reviews + ratings
+    runActor('apify/yelp-scraper', {
+      searchTerm: business_type, location, maxResults: 40,
+    }, 4 * 60000, 80).then(items => items.forEach((p: any) => addPlace({
+      name: p.name, address: p.address, phone: p.phone, website: p.website,
+      rating: p.rating, reviews: p.reviewCount, yelp_url: p.url,
+    }))),
+
+    // Yellow Pages for extra coverage
+    runActor('apify/yellow-pages-scraper', {
+      search: business_type, location, maxItems: 40,
+    }, 4 * 60000, 80).then(items => items.forEach((p: any) => addPlace({
+      name: p.name, address: p.address, phone: p.phone, website: p.website,
+    }))),
+  ]);
+
+  let businesses = Array.from(placeMap.values()).slice(0, 100);
+  if (businesses.length === 0) {
+    const fallback = await apifySearch(`${query} address phone website`, 20);
+    businesses = fallback.map(r => ({ name: r.title, website: r.url, snippet: r.snippet }));
   }
-  try {
-    const allResults: any[] = []; let pageToken: string | undefined;
-    do {
-      const params: any = { query: `${business_type} in ${location}`, key };
-      if (pageToken) params.pagetoken = pageToken;
-      const { data } = await axios.get('https://maps.googleapis.com/maps/api/place/textsearch/json', { params });
-      const detailed = await Promise.all((data.results || []).map(async (place: any) => {
-        try {
-          const det = await axios.get('https://maps.googleapis.com/maps/api/place/details/json', { params: { place_id: place.place_id, fields: 'website,formatted_phone_number,opening_hours', key } });
-          return { name: place.name, address: place.formatted_address, phone: det.data.result?.formatted_phone_number, website: det.data.result?.website, rating: place.rating, review_count: place.user_ratings_total, open_now: det.data.result?.opening_hours?.open_now, location: place.geometry?.location };
-        } catch { return { name: place.name, address: place.formatted_address, rating: place.rating }; }
-      }));
-      allResults.push(...detailed);
-      pageToken = data.next_page_token;
-      if (pageToken) await new Promise(r => setTimeout(r, 2000));
-    } while (pageToken && allResults.length < 60);
-    const result = { business_type, location, total_found: allResults.length, businesses: allResults, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
-    graphClient.ingest('skill_local_market_map', result);
-    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
-  } catch (err: any) {
-    // Fallback to web search if Places API call fails
-    try {
-      const searchResults = await serpSearch(`${business_type} in ${location}`, 10);
-      const businesses = searchResults.map((r: any) => ({ name: r.title, url: r.link, snippet: r.snippet }));
-      return { content: [{ type: 'text', text: JSON.stringify({ business_type, location, total_found: businesses.length, businesses, error_detail: err.message, note: 'Google Places API error — results sourced from web search as fallback.', cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
-    } catch {
-      return { content: [{ type: 'text', text: JSON.stringify({ business_type, location, total_found: 0, businesses: [], error_detail: err.message, note: 'Local market mapping temporarily unavailable.', cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
-    }
-  }
+
+  const result = {
+    business_type, location, total_found: businesses.length,
+    sources_used: ['google-maps-scraper', 'crawler-google-places', 'google-maps-email-extractor', 'yelp-scraper', 'yellow-pages-scraper'],
+    businesses, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining,
+  };
+  graphClient.ingest('skill_local_market_map', result);
+  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
 }
 
 async function handleSkillCompetitorIntel({ competitor_url, focus = 'both' }: any) {
   const cost = PRICING.SKILL_COMPETITOR_INTEL.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_COMPETITOR_INTEL.event, 1);
-  try {
-    const competitorName = competitor_url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0].split('.')[0];
-    const searchQueries: string[] = [];
-    if (focus === 'pricing' || focus === 'both') searchQueries.push(`${competitorName} pricing plans`);
-    if (focus === 'features' || focus === 'both') searchQueries.push(`${competitorName} features`);
-    searchQueries.push(`${competitorName} reviews site:g2.com OR site:capterra.com OR site:trustpilot.com`);
-    const searchResults: Record<string, string[]> = {};
-    await Promise.allSettled(searchQueries.map(async (q) => { const results = await serpSearch(q, 3); searchResults[q] = results.map((r: any) => r.link); }));
-    const urlsToScrape = new Set<string>([competitor_url]);
-    Object.values(searchResults).forEach(links => links.slice(0, 2).forEach(link => urlsToScrape.add(link)));
-    if (focus === 'pricing' || focus === 'both') urlsToScrape.add(`${competitor_url.replace(/\/$/, '')}/pricing`);
-    if (focus === 'features' || focus === 'both') urlsToScrape.add(`${competitor_url.replace(/\/$/, '')}/features`);
-    const scraped = await Promise.allSettled(Array.from(urlsToScrape).slice(0, 8).map(async (url) => { const content = await jinaFetch(url, 2500); return { url, content, success: !!content }; }));
-    const pages_data = scraped.filter(r => r.status === 'fulfilled' && (r.value as any).success).map((r: any) => r.value);
-    const homepagePage = pages_data.find(p => p.url === competitor_url);
-    const pricingPages = pages_data.filter(p => p.url.includes('pricing') || p.url.includes('plans') || p.url.includes('cost'));
-    const featurePages = pages_data.filter(p => p.url.includes('features') || p.url.includes('product') || p.url.includes('solutions'));
-    const reviewPages = pages_data.filter(p => p.url.includes('g2.com') || p.url.includes('capterra') || p.url.includes('trustpilot'));
-    const result = { competitor: competitor_url, competitor_name: competitorName, focus, summary: { homepage: homepagePage?.content?.substring(0, 500) || null, pricing_pages_found: pricingPages.length, feature_pages_found: featurePages.length, review_pages_found: reviewPages.length }, pricing_data: pricingPages.map(p => ({ url: p.url, content: p.content })), feature_data: featurePages.map(p => ({ url: p.url, content: p.content })), review_data: reviewPages.map(p => ({ url: p.url, content: p.content })), all_pages_scraped: pages_data.length, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
-    graphClient.ingest('skill_competitor_intel', result);
-    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
-  } catch (err: any) {
-    const competitorName = competitor_url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0].split('.')[0];
-    return { content: [{ type: 'text', text: JSON.stringify({ competitor: competitor_url, competitor_name: competitorName, focus, summary: { homepage: null, pricing_pages_found: 0, feature_pages_found: 0, review_pages_found: 0 }, pricing_data: [], feature_data: [], review_data: [], all_pages_scraped: 0, error_detail: err.message, note: 'Competitor intel temporarily unavailable. Try scrape_page directly on the competitor URL.', cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
-  }
+
+  const cleanUrl = competitor_url.replace(/\/$/, '');
+  const competitorName = cleanUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0].split('.')[0];
+  const cleanDomain = cleanUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+
+  const intel: any = { competitor: cleanUrl, competitor_name: competitorName, focus };
+
+  await Promise.allSettled([
+    // Scrape key pages directly
+    axiosScrape(cleanUrl, 3000).then(t => { intel.homepage = t?.slice(0, 800); }),
+    axiosScrape(`${cleanUrl}/pricing`, 3000).then(t => { intel.pricing_page = t?.slice(0, 1200); }),
+    axiosScrape(`${cleanUrl}/features`, 2000).then(t => { intel.features_page = t?.slice(0, 1000); }),
+    axiosScrape(`${cleanUrl}/about`, 1500).then(t => { intel.about_page = t?.slice(0, 600); }),
+
+    // Trustpilot reviews
+    runActor('apify/trustpilot-scraper', {
+      startUrls: [{ url: `https://www.trustpilot.com/review/${cleanDomain}` }],
+      maxReviews: 20,
+    }, 4 * 60000, 30).then(items => {
+      intel.trustpilot_reviews = items.slice(0, 10).map((r: any) => ({
+        rating: r.rating, title: r.title, text: r.text?.slice(0, 200), date: r.date,
+      }));
+    }),
+
+    // Search: pricing, features, reviews
+    apifySearch(`${competitorName} pricing plans 2025`, 5).then(r => { intel.pricing_intel = r.slice(0, 3); }),
+    apifySearch(`${competitorName} reviews site:g2.com OR site:capterra.com OR site:trustpilot.com`, 5).then(r => { intel.review_intel = r.slice(0, 3); }),
+    apifySearch(`${competitorName} features product`, 5).then(r => { intel.feature_intel = r.slice(0, 3); }),
+  ]);
+
+  intel.cost_usd = cost;
+  intel.free_credit_used = freeUsed;
+  intel.free_credit_remaining = remaining;
+  graphClient.ingest('skill_competitor_intel', intel);
+  return { content: [{ type: 'text', text: JSON.stringify(intel, null, 2) }] };
 }
 
 async function handleSkillDecisionMakerFinder({ domain, departments = 'sales,marketing,engineering,executive' }: any) {
@@ -1210,72 +1378,156 @@ async function handleSkillDecisionMakerFinder({ domain, departments = 'sales,mar
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_DECISION_MAKER.event, 1);
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-  const apolloKey = process.env.APOLLO_API_KEY;
-  if (!apolloKey) {
-    return { content: [{ type: 'text', text: JSON.stringify({ domain: cleanDomain, contacts_found: 0, contacts: [], note: 'Decision maker lookup requires APOLLO_API_KEY which is not configured. Use find_emails as an alternative for basic contact discovery.', cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
-  }
-  try {
-    const deptList = departments.split(',').map((d: string) => d.trim().toLowerCase());
-    const { data } = await axios.post('https://api.apollo.io/v1/mixed_people/search',
-      { q_organization_domains: cleanDomain, page: 1, per_page: 50 },
-      { headers: { 'x-api-key': apolloKey, 'Content-Type': 'application/json' }, timeout: 15000 }
-    );
-    const contacts = (data.people || [])
-      .filter((p: any) => { if (!p.departments?.length) return true; return deptList.some((d: string) => p.departments.some((dept: string) => dept.toLowerCase().includes(d))); })
-      .sort((a: any, b: any) => { const s = ['c_suite', 'vp', 'director', 'senior', 'junior']; return s.indexOf(a.seniority) - s.indexOf(b.seniority); })
-      .slice(0, 20)
-      .map((p: any) => ({ name: `${p.first_name || ''} ${p.last_name || ''}`.trim(), email: p.email, title: p.title, seniority: p.seniority, department: p.departments?.[0], linkedin: p.linkedin_url }));
-    const result = { domain: cleanDomain, contacts_found: contacts.length, contacts, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
-    graphClient.ingest('skill_decision_maker_finder', result);
-    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
-  } catch (err: any) {
-    return { content: [{ type: 'text', text: JSON.stringify({ domain: cleanDomain, contacts_found: 0, contacts: [], error_detail: err.message, note: 'Decision maker lookup temporarily unavailable. Try find_emails as a fallback.', cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining }, null, 2) }] };
-  }
-}
+  const deptList = departments.split(',').map((d: string) => d.trim().toLowerCase());
 
-// ==========================================
-// NEW SKILL HANDLERS
-// ==========================================
+  const contactMap = new Map<string, any>();
+  const addContact = (c: any) => {
+    const key = c.email || c.linkedin || c.name || Math.random().toString();
+    if (!contactMap.has(key)) contactMap.set(key, c);
+    else Object.assign(contactMap.get(key), c);
+  };
+
+  await Promise.allSettled([
+    // LinkedIn people finder — C-suite + VPs
+    runActor('anchor/linkedin-people-finder', {
+      companyDomain: cleanDomain, seniority: 'c_suite,vp,director,senior', limit: 30,
+    }, 5 * 60000, 60).then(items => items.forEach((p: any) => addContact({
+      name: p.name || p.fullName, email: p.email, title: p.title || p.jobTitle,
+      seniority: p.seniority, department: p.department, linkedin: p.linkedinUrl, source: 'linkedin-people-finder',
+    }))),
+
+    // Apollo scraper — no API key
+    runActor('curious_coder/apollo-leads-scraper', {
+      domain: cleanDomain, seniority: 'c_suite,vp,director', limit: 30,
+    }, 5 * 60000, 60).then(items => items.forEach((p: any) => addContact({
+      name: p.name, email: p.email, title: p.title,
+      seniority: p.seniority, department: p.departments?.[0], linkedin: p.linkedin_url, source: 'apollo-scraper',
+    }))),
+
+    // Search LinkedIn by department
+    ...deptList.slice(0, 3).map(dept =>
+      apifySearch(`${cleanDomain} "${dept}" director OR VP OR head site:linkedin.com`, 5).then(results => {
+        results.forEach(r => addContact({ title: `${dept} leader`, website: r.url, company: cleanDomain, source: 'linkedin-search' }));
+      })
+    ),
+
+    // Email scraping
+    handleFindEmails({ domain: cleanDomain, limit: 15 }).then(r => {
+      try {
+        const data = JSON.parse((r.content[0] as any).text);
+        data.emails?.forEach((e: any) => addContact({ email: e.email, source: 'email-scraper' }));
+      } catch { /* silent */ }
+    }),
+  ]);
+
+  const seniorityOrder = ['c_suite', 'vp', 'director', 'senior', 'manager', 'junior'];
+  const contacts = Array.from(contactMap.values())
+    .filter(c => c.name || c.email)
+    .sort((a, b) => (seniorityOrder.indexOf(a.seniority) || 99) - (seniorityOrder.indexOf(b.seniority) || 99))
+    .slice(0, 25);
+
+  const result = {
+    domain: cleanDomain, departments: deptList, contacts_found: contacts.length, contacts,
+    sources_used: ['linkedin-people-finder', 'apollo-scraper', 'linkedin-search', 'email-scraper'],
+    cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining,
+  };
+  graphClient.ingest('skill_decision_maker_finder', result);
+  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+}
 
 async function handleSkillCompetitorAds({ competitor_name, competitor_domain }: any) {
   const cost = PRICING.SKILL_COMPETITOR_ADS.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_COMPETITOR_ADS.event, 1);
+
   const fbLibraryUrl = `https://www.facebook.com/ads/library/?active_status=active&ad_type=ALL&country=ALL&q=${encodeURIComponent(competitor_name)}&search_type=keyword_unordered`;
   const googleTransparencyUrl = `https://adstransparency.google.com/?region=anywhere&advertiserName=${encodeURIComponent(competitor_name)}`;
-  const [fbContent, googleContent] = await Promise.all([jinaFetch(fbLibraryUrl, 2000), jinaFetch(googleTransparencyUrl, 2000)]);
-  const adSearchResults: any[] = [];
-  await Promise.allSettled([`${competitor_name} facebook ad examples copy`, `${competitor_name} google ads strategy`, `${competitor_name} best performing ads`].map(async (q) => { const results = await serpSearch(q, 3); results.slice(0, 2).forEach((r: any) => adSearchResults.push({ query: q, title: r.title, url: r.link, snippet: r.snippet })); }));
-  const landingPages: any[] = [];
-  await Promise.allSettled(adSearchResults.filter(r => r.url && !r.url.includes('google') && !r.url.includes('facebook')).slice(0, 3).map(async (r) => { const content = await jinaFetch(r.url, 1500); if (content) landingPages.push({ url: r.url, content }); }));
-  const result = { competitor: competitor_name, domain: competitor_domain || 'not provided', facebook_ad_library: { url: fbLibraryUrl, content: fbContent || 'Visit URL manually to see active ads' }, google_ads_transparency: { url: googleTransparencyUrl, content: googleContent || 'Visit URL manually to see active Google ads' }, ad_intelligence: adSearchResults, landing_pages: landingPages, manual_links: [fbLibraryUrl, googleTransparencyUrl], cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
-  graphClient.ingest('skill_competitor_ads', result);
-  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  const intel: any = { competitor: competitor_name, domain: competitor_domain || null };
+
+  await Promise.allSettled([
+    // Scrape ad library pages directly
+    axiosScrape(fbLibraryUrl, 2000).then(t => { intel.facebook_ad_library = { url: fbLibraryUrl, content: t || 'Visit URL manually' }; }),
+    axiosScrape(googleTransparencyUrl, 2000).then(t => { intel.google_ads_transparency = { url: googleTransparencyUrl, content: t || 'Visit URL manually' }; }),
+
+    // If domain given — scrape landing pages
+    competitor_domain
+      ? axiosScrape(`https://${competitor_domain.replace(/^https?:\/\//, '')}`, 2000).then(t => { intel.landing_page = t?.slice(0, 800); })
+      : Promise.resolve(),
+
+    // Search for ad intelligence
+    apifySearch(`${competitor_name} facebook ad examples copy creative`, 5).then(r => { intel.fb_ad_intel = r.slice(0, 4); }),
+    apifySearch(`${competitor_name} google ads strategy keywords`, 5).then(r => { intel.google_ad_intel = r.slice(0, 4); }),
+    apifySearch(`${competitor_name} best performing ads 2025`, 5).then(r => { intel.ad_performance_intel = r.slice(0, 4); }),
+  ]);
+
+  intel.manual_links = [fbLibraryUrl, googleTransparencyUrl];
+  intel.cost_usd = cost;
+  intel.free_credit_used = freeUsed;
+  intel.free_credit_remaining = remaining;
+  graphClient.ingest('skill_competitor_ads', intel);
+  return { content: [{ type: 'text', text: JSON.stringify(intel, null, 2) }] };
 }
 
 async function handleSkillJobSignals({ company_name, domain }: any) {
   const cost = PRICING.SKILL_JOB_SIGNALS.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_JOB_SIGNALS.event, 1);
-  const allResults: any[] = [];
+
+  const signals: any = { company: company_name, domain: domain || null };
+
   await Promise.allSettled([
-    `${company_name} jobs site:linkedin.com OR site:greenhouse.io OR site:lever.co OR site:jobs.ashbyhq.com`,
-    `${company_name} hiring ${new Date().getFullYear()}`,
-    `${company_name} careers open roles`,
-  ].map(async (q) => { const results = await serpSearch(q, 5); results.forEach((r: any) => allResults.push({ title: r.title, url: r.link, snippet: r.snippet })); }));
-  let careersContent = null;
-  if (domain) {
-    const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    for (const url of [`https://${cleanDomain}/careers`, `https://${cleanDomain}/jobs`, `https://${cleanDomain}/work-with-us`]) {
-      careersContent = await jinaFetch(url, 3000);
-      if (careersContent) break;
-    }
-  }
-  const jobPages: any[] = [];
-  await Promise.allSettled(allResults.filter(r => r.url && (r.url.includes('greenhouse') || r.url.includes('lever') || r.url.includes('ashby'))).slice(0, 3).map(async (r) => { const content = await jinaFetch(r.url, 2000); if (content) jobPages.push({ url: r.url, content }); }));
-  const result = { company: company_name, domain: domain || 'not provided', careers_page: careersContent, job_listings_found: allResults.length, search_results: allResults, job_pages_scraped: jobPages, signals_to_watch: ['New departments = strategic expansion', 'Engineering spike = product build phase', 'Sales + marketing = growth mode', 'Infra / DevOps = scaling', 'AI / ML roles = technology pivot'], cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
-  graphClient.ingest('skill_job_signals', { company: company_name, job_listings: allResults });
-  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+    // Indeed job listings
+    runActor('apify/indeed-scraper', {
+      queries: [{ keyword: company_name, location: '' }], maxItems: 30,
+    }, 5 * 60000, 50).then(items => {
+      signals.indeed_jobs = items.slice(0, 20).map((j: any) => ({
+        title: j.positionName || j.title, company: j.company,
+        location: j.location, date: j.date, url: j.url,
+      }));
+    }),
+
+    // LinkedIn jobs
+    runActor('apify/linkedin-jobs-scraper', {
+      queries: [{ keyword: company_name, location: '' }], maxJobs: 30,
+    }, 5 * 60000, 50).then(items => {
+      signals.linkedin_jobs = items.slice(0, 20).map((j: any) => ({
+        title: j.title, company: j.company, location: j.location,
+        date: j.postedAt, url: j.link, seniority: j.seniorityLevel,
+      }));
+    }),
+
+    // Scrape careers page directly
+    domain
+      ? (async () => {
+          const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+          for (const path of ['/careers', '/jobs', '/work-with-us', '/join-us']) {
+            const content = await axiosScrape(`https://${cleanDomain}${path}`, 3000);
+            if (content) { signals.careers_page = content.slice(0, 1500); break; }
+          }
+        })()
+      : Promise.resolve(),
+
+    // Search for job postings + signals
+    apifySearch(`${company_name} jobs hiring ${new Date().getFullYear()}`, 8).then(r => { signals.job_search_results = r.slice(0, 6); }),
+    apifySearch(`${company_name} site:greenhouse.io OR site:lever.co OR site:workable.com`, 5).then(r => { signals.ats_listings = r.slice(0, 5); }),
+  ]);
+
+  const allJobs = [...(signals.indeed_jobs || []), ...(signals.linkedin_jobs || [])];
+  const deptFreq: Record<string, number> = {};
+  allJobs.forEach((j: any) => {
+    const t = (j.title || '').toLowerCase();
+    ['engineering', 'sales', 'marketing', 'product', 'design', 'data', 'finance', 'hr', 'legal', 'operations'].forEach(d => {
+      if (t.includes(d)) deptFreq[d] = (deptFreq[d] || 0) + 1;
+    });
+  });
+  signals.department_breakdown = deptFreq;
+  signals.signals_to_watch = ['Engineering spike = product build phase', 'Sales + marketing = growth mode', 'Infra / DevOps = scaling', 'AI / ML roles = tech pivot', 'New departments = strategic expansion'];
+  signals.cost_usd = cost;
+  signals.free_credit_used = freeUsed;
+  signals.free_credit_remaining = remaining;
+
+  graphClient.ingest('skill_job_signals', { company: company_name, job_count: allJobs.length });
+  return { content: [{ type: 'text', text: JSON.stringify(signals, null, 2) }] };
 }
 
 async function handleSkillTechStack({ domain }: any) {
@@ -1283,37 +1535,109 @@ async function handleSkillTechStack({ domain }: any) {
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_TECH_STACK.event, 1);
   const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-  const [builtWithContent, homepageContent, jobsContent] = await Promise.all([
-    jinaFetch(`https://builtwith.com/${cleanDomain}`, 3000),
-    jinaFetch(`https://${cleanDomain}`, 2000),
-    jinaFetch(`https://${cleanDomain}/careers`, 1500),
+
+  const stack: any = { domain: cleanDomain };
+
+  await Promise.allSettled([
+    // BuiltWith — most comprehensive tech profiler
+    axiosScrape(`https://builtwith.com/${cleanDomain}`, 4000).then(t => { stack.builtwith = t?.slice(0, 2000); }),
+
+    // Wappalyzer alternative via scraper — detect frameworks from page source
+    runActor('apify/cheerio-scraper', {
+      startUrls: [{ url: `https://${cleanDomain}` }],
+      pageFunction: `async function pageFunction({ $, request, html }) {
+        const signals = [];
+        const h = html || '';
+        if (h.includes('react')) signals.push('React');
+        if (h.includes('angular')) signals.push('Angular');
+        if (h.includes('vue')) signals.push('Vue');
+        if (h.includes('next')) signals.push('Next.js');
+        if (h.includes('stripe')) signals.push('Stripe');
+        if (h.includes('hubspot')) signals.push('HubSpot');
+        if (h.includes('segment')) signals.push('Segment');
+        if (h.includes('intercom')) signals.push('Intercom');
+        if (h.includes('zendesk')) signals.push('Zendesk');
+        if (h.includes('salesforce')) signals.push('Salesforce');
+        if (h.includes('wordpress')) signals.push('WordPress');
+        if (h.includes('shopify')) signals.push('Shopify');
+        if (h.includes('gtm') || h.includes('googletagmanager')) signals.push('Google Tag Manager');
+        if (h.includes('ga4') || h.includes('gtag')) signals.push('Google Analytics 4');
+        return { url: request.url, detected_tech: signals };
+      }`,
+      maxRequestsPerCrawl: 1,
+    }, 60000, 3).then(items => {
+      if (items[0]) stack.detected_tech = items[0].detected_tech;
+    }),
+
+    // Homepage + careers — for tech mentions
+    axiosScrape(`https://${cleanDomain}`, 2000).then(t => { stack.homepage_signals = t?.slice(0, 800); }),
+    axiosScrape(`https://${cleanDomain}/careers`, 2000).then(t => { stack.jobs_tech_mentions = t?.slice(0, 1000); }),
+
+    // Engineering blog
+    apifySearch(`${cleanDomain} tech stack engineering blog`, 5).then(results => {
+      stack.engineering_blog_results = results.slice(0, 4);
+    }),
+
+    // StackShare profile
+    axiosScrape(`https://stackshare.io/${cleanDomain.split('.')[0]}`, 2000).then(t => { if (t) stack.stackshare = t.slice(0, 800); }),
   ]);
-  const stackResults = await serpSearch(`${cleanDomain} tech stack engineering blog`, 5);
-  const engBlogPages: any[] = [];
-  await Promise.allSettled(stackResults.filter((r: any) => r.link && (r.link.includes('engineering') || r.link.includes('tech') || r.link.includes('blog'))).slice(0, 2).map(async (r: any) => { const content = await jinaFetch(r.link, 2000); if (content) engBlogPages.push({ url: r.link, content }); }));
-  const result = { domain: cleanDomain, builtwith_data: builtWithContent, homepage_signals: homepageContent?.substring(0, 1000) || null, jobs_tech_mentions: jobsContent?.substring(0, 1000) || null, engineering_blog: engBlogPages, search_results: stackResults.slice(0, 5).map((r: any) => ({ title: r.title, url: r.link, snippet: r.snippet })), cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
+
+  stack.cost_usd = cost;
+  stack.free_credit_used = freeUsed;
+  stack.free_credit_remaining = remaining;
   graphClient.ingest('skill_tech_stack', { domain: cleanDomain });
-  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  return { content: [{ type: 'text', text: JSON.stringify(stack, null, 2) }] };
 }
 
 async function handleSkillFundingIntel({ company_name, domain }: any) {
   const cost = PRICING.SKILL_FUNDING_INTEL.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_FUNDING_INTEL.event, 1);
-  const allResults: any[] = [];
+
+  const intel: any = { company: company_name, domain: domain || null };
+  const crunchbaseSlug = company_name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
   await Promise.allSettled([
-    `${company_name} funding round raised 2024 2025`,
-    `${company_name} investors valuation`,
-    `${company_name} news announcement`,
-    `${company_name} site:crunchbase.com OR site:techcrunch.com OR site:businesswire.com`,
-  ].map(async (q) => { const results = await serpSearch(q, 4); results.slice(0, 3).forEach((r: any) => allResults.push({ query: q, title: r.title, url: r.link, snippet: r.snippet, date: r.date })); }));
-  const crunchbaseUrl = `https://www.crunchbase.com/organization/${company_name.toLowerCase().replace(/\s+/g, '-')}`;
-  const crunchbaseContent = await jinaFetch(crunchbaseUrl, 2500);
-  const newsPages: any[] = [];
-  await Promise.allSettled(allResults.filter(r => r.url && (r.url.includes('techcrunch') || r.url.includes('businesswire') || r.url.includes('prnewswire'))).slice(0, 3).map(async (r) => { const content = await jinaFetch(r.url, 2000); if (content) newsPages.push({ url: r.url, content }); }));
-  const result = { company: company_name, domain: domain || 'not provided', crunchbase: { url: crunchbaseUrl, content: crunchbaseContent }, funding_search_results: allResults, news_articles: newsPages, cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
+    // Crunchbase scraper — primary funding source
+    runActor('epctex/crunchbase-scraper', {
+      startUrls: [{ url: `https://www.crunchbase.com/organization/${crunchbaseSlug}`, method: 'GET' }],
+      maxItems: 5,
+    }, 3 * 60000, 10).then(items => {
+      if (items[0]) intel.crunchbase = {
+        total_raised: items[0].totalFunding, last_round: items[0].lastFundingType,
+        investors: items[0].investors?.slice(0, 10), founded: items[0].foundedOn,
+        valuation: items[0].preMoneyValuation, employee_count: items[0].staffCount,
+      };
+    }),
+
+    // Scrape Crunchbase page directly as fallback
+    axiosScrape(`https://www.crunchbase.com/organization/${crunchbaseSlug}`, 3000).then(t => {
+      if (t && !intel.crunchbase) intel.crunchbase_page = t.slice(0, 1500);
+    }),
+
+    // News searches
+    apifySearch(`${company_name} funding round raised Series 2024 2025`, 8).then(r => { intel.funding_news = r.slice(0, 5); }),
+    apifySearch(`${company_name} investors valuation acquisition`, 5).then(r => { intel.investor_intel = r.slice(0, 4); }),
+    apifySearch(`${company_name} site:techcrunch.com OR site:businesswire.com OR site:prnewswire.com`, 5).then(r => { intel.press_releases = r.slice(0, 4); }),
+
+    // Scrape news articles
+    apifySearch(`${company_name} news announcement`, 5).then(async results => {
+      const newsArticles: any[] = [];
+      await Promise.allSettled(
+        results.filter(r => r.url.includes('techcrunch') || r.url.includes('businesswire')).slice(0, 2).map(async r => {
+          const content = await axiosScrape(r.url, 2000);
+          if (content) newsArticles.push({ url: r.url, content: content.slice(0, 600) });
+        })
+      );
+      intel.news_articles = newsArticles;
+    }),
+  ]);
+
+  intel.cost_usd = cost;
+  intel.free_credit_used = freeUsed;
+  intel.free_credit_remaining = remaining;
   graphClient.ingest('skill_funding_intel', { company: company_name });
-  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  return { content: [{ type: 'text', text: JSON.stringify(intel, null, 2) }] };
 }
 
 async function handleSkillSocialProof({ company_name, domain }: any) {
@@ -1321,81 +1645,146 @@ async function handleSkillSocialProof({ company_name, domain }: any) {
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_SOCIAL_PROOF.event, 1);
   const slug = company_name.toLowerCase().replace(/\s+/g, '-');
-  const reviewPages: any[] = [];
+  const cleanDomain = domain?.replace(/^https?:\/\//, '').replace(/\/.*$/, '') || slug;
+
+  const proof: any = { company: company_name };
+
   await Promise.allSettled([
-    `https://www.g2.com/products/${slug}/reviews`,
-    `https://www.capterra.com/reviews/${slug}`,
-    `https://www.trustpilot.com/review/${domain || slug}`,
-  ].map(async (url) => { const content = await jinaFetch(url, 3000); if (content) reviewPages.push({ source: url.includes('g2') ? 'G2' : url.includes('capterra') ? 'Capterra' : 'Trustpilot', url, content }); }));
-  const testimonialResults = await serpSearch(`${company_name} customer testimonial case study review`, 5);
-  let testimonialPage = null;
-  if (domain) {
-    const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    for (const url of [`https://${cleanDomain}/customers`, `https://${cleanDomain}/testimonials`, `https://${cleanDomain}/case-studies`]) {
-      testimonialPage = await jinaFetch(url, 2500);
-      if (testimonialPage) break;
-    }
-  }
-  const result = { company: company_name, review_platforms: reviewPages, own_site_testimonials: testimonialPage, search_results: testimonialResults.slice(0, 5).map((r: any) => ({ title: r.title, url: r.link, snippet: r.snippet })), platforms_found: reviewPages.map(r => r.source), cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
-  graphClient.ingest('skill_social_proof', { company: company_name, reviews_found: reviewPages.length });
-  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+    // Trustpilot via actor — structured reviews
+    runActor('apify/trustpilot-scraper', {
+      startUrls: [{ url: `https://www.trustpilot.com/review/${cleanDomain}` }],
+      maxReviews: 30,
+    }, 4 * 60000, 40).then(items => {
+      proof.trustpilot = {
+        reviews: items.slice(0, 15).map((r: any) => ({
+          rating: r.rating, title: r.title, text: r.text?.slice(0, 200), date: r.date,
+        })),
+        avg_rating: items.length ? (items.reduce((s: number, r: any) => s + (r.rating || 0), 0) / items.length).toFixed(1) : null,
+        total_reviews: items.length,
+      };
+    }),
+
+    // G2 via direct scrape
+    axiosScrape(`https://www.g2.com/products/${slug}/reviews`, 3000).then(t => {
+      if (t) proof.g2 = t.slice(0, 1200);
+    }),
+
+    // Capterra via direct scrape
+    axiosScrape(`https://www.capterra.com/reviews/${slug}`, 3000).then(t => {
+      if (t) proof.capterra = t.slice(0, 1200);
+    }),
+
+    // Own site testimonials
+    domain
+      ? (async () => {
+          for (const path of ['/customers', '/testimonials', '/case-studies', '/reviews']) {
+            const content = await axiosScrape(`https://${cleanDomain}${path}`, 2500);
+            if (content) { proof.own_testimonials = content.slice(0, 1200); break; }
+          }
+        })()
+      : Promise.resolve(),
+
+    // Search for reviews + case studies
+    apifySearch(`${company_name} customer testimonial case study review`, 8).then(r => { proof.review_search = r.slice(0, 5); }),
+    apifySearch(`"${company_name}" reviews site:g2.com OR site:capterra.com OR site:getapp.com`, 5).then(r => { proof.review_sites = r.slice(0, 4); }),
+  ]);
+
+  proof.cost_usd = cost;
+  proof.free_credit_used = freeUsed;
+  proof.free_credit_remaining = remaining;
+  graphClient.ingest('skill_social_proof', { company: company_name });
+  return { content: [{ type: 'text', text: JSON.stringify(proof, null, 2) }] };
 }
 
 async function handleSkillMarketMap({ market, max_competitors = 10 }: any) {
   const cost = PRICING.SKILL_MARKET_MAP.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_MARKET_MAP.event, 1);
-  const allResults: any[] = [];
+
+  const map: any = { market, max_competitors };
+
   await Promise.allSettled([
-    `best ${market} tools software`,
-    `top ${market} companies`,
-    `${market} alternatives competitors`,
-    `${market} comparison`,
-  ].map(async (q) => { const results = await serpSearch(q, 5); results.forEach((r: any) => allResults.push({ title: r.title, url: r.link, snippet: r.snippet })); }));
-  const comparisonPages: any[] = [];
-  await Promise.allSettled(allResults.filter(r => r.url && (r.url.includes('g2.com') || r.url.includes('capterra') || r.title?.toLowerCase().includes('best') || r.title?.toLowerCase().includes('top'))).slice(0, 4).map(async (r) => { const content = await jinaFetch(r.url, 3000); if (content) comparisonPages.push({ url: r.url, content }); }));
-  const pricingResults = await serpSearch(`${market} pricing comparison 2024 2025`, 5);
-  const result = { market, search_results: allResults.slice(0, 15), comparison_pages: comparisonPages, pricing_comparison_results: pricingResults.slice(0, 5).map((r: any) => ({ title: r.title, url: r.link, snippet: r.snippet })), note: 'Use comparison_pages to extract player names, positioning and pricing tiers', cost_usd: cost, free_credit_used: freeUsed, free_credit_remaining: remaining };
+    // Multiple search angles
+    apifySearch(`best ${market} tools software 2025`, 10).then(r => { map.best_tools = r.slice(0, 8); }),
+    apifySearch(`top ${market} companies players`, 8).then(r => { map.top_players = r.slice(0, 6); }),
+    apifySearch(`${market} alternatives competitors comparison`, 8).then(r => { map.comparison = r.slice(0, 6); }),
+    apifySearch(`${market} pricing comparison tiers 2025`, 5).then(r => { map.pricing_intel = r.slice(0, 4); }),
+
+    // G2 comparison page
+    axiosScrape(`https://www.g2.com/categories/${market.toLowerCase().replace(/\s+/g, '-')}`, 3000).then(t => {
+      if (t) map.g2_category = t.slice(0, 2000);
+    }),
+
+    // Capterra comparison
+    axiosScrape(`https://www.capterra.com/${market.toLowerCase().replace(/\s+/g, '-')}-software/`, 3000).then(t => {
+      if (t) map.capterra_category = t.slice(0, 2000);
+    }),
+
+    // Scrape any G2/Capterra results that show up in best-tools
+    apifySearch(`${market} site:g2.com/categories OR site:capterra.com`, 4).then(async results => {
+      const pages: any[] = [];
+      await Promise.allSettled(results.slice(0, 2).map(async r => {
+        const content = await axiosScrape(r.url, 2000);
+        if (content) pages.push({ url: r.url, content: content.slice(0, 1000) });
+      }));
+      map.comparison_pages = pages;
+    }),
+  ]);
+
+  map.note = 'Use comparison_pages + g2_category to extract player names, positioning and pricing tiers';
+  map.cost_usd = cost;
+  map.free_credit_used = freeUsed;
+  map.free_credit_remaining = remaining;
   graphClient.ingest('skill_market_map', { market });
-  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  return { content: [{ type: 'text', text: JSON.stringify(map, null, 2) }] };
 }
 
 async function handleSkillKasprEnrich({ linkedin_id, prospect_name }: any) {
   const cost = PRICING.SKILL_KASPR_ENRICH.charge;
   const { charged, freeUsed, remaining } = applyCredit(cost);
   if (charged > 0) await chargeIfNotOwner(PRICING.SKILL_KASPR_ENRICH.event, 1);
-  const apiKey = process.env.KASPR_API_KEY;
-  if (!apiKey) throw new Error("KASPR_API_KEY is not configured in Actor environment");
 
-  const res = await fetch("https://api.developers.kaspr.io/profile/linkedin", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "accept-version": "v2.0"
-    },
-    body: JSON.stringify({
-      id: linkedin_id,
-      name: prospect_name
-    })
-  });
+  const profile: any = { prospect: prospect_name, linkedin_id };
 
-  const text = await res.text();
-  let data;
-  try { data = JSON.parse(text); } catch(e) { data = text; }
+  await Promise.allSettled([
+    // LinkedIn profile scraper
+    linkedin_id
+      ? runActor('apify/linkedin-profile-scraper', {
+          profileUrls: [linkedin_id.startsWith('http') ? linkedin_id : `https://www.linkedin.com/in/${linkedin_id}`],
+        }, 3 * 60000, 5).then(items => {
+          if (items[0]) profile.linkedin_data = {
+            name: items[0].name, headline: items[0].headline,
+            about: items[0].about, experience: items[0].experience?.slice(0, 3),
+            education: items[0].education?.slice(0, 2), skills: items[0].skills?.slice(0, 10),
+            email: items[0].email, phone: items[0].phone,
+          };
+        })
+      : Promise.resolve(),
 
-  const result = {
-    prospect: prospect_name,
-    linkedin_id,
-    kaspr_data: data,
-    status: res.status,
-    cost_usd: cost,
-    free_credit_used: freeUsed,
-    free_credit_remaining: remaining
-  };
+    // People finder for emails + phone
+    prospect_name
+      ? runActor('anchor/linkedin-people-finder', {
+          fullName: prospect_name, limit: 3,
+        }, 3 * 60000, 5).then(items => {
+          if (items[0]) profile.contact_data = {
+            email: items[0].email, phone: items[0].phone,
+            linkedin: items[0].linkedinUrl, company: items[0].company, title: items[0].title,
+          };
+        })
+      : Promise.resolve(),
 
+    // Google search for public info
+    apifySearch(`"${prospect_name}" ${linkedin_id || ''} email contact`, 5).then(r => {
+      profile.web_mentions = r.slice(0, 4);
+    }),
+  ]);
+
+  profile.sources_used = ['linkedin-profile-scraper', 'linkedin-people-finder', 'google-search'];
+  profile.cost_usd = cost;
+  profile.free_credit_used = freeUsed;
+  profile.free_credit_remaining = remaining;
   graphClient.ingest('skill_kaspr_enrich', { prospect: prospect_name, id: linkedin_id });
-  return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  return { content: [{ type: 'text', text: JSON.stringify(profile, null, 2) }] };
 }
 
 // ==========================================

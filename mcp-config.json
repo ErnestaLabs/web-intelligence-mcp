@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "forage": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "-e",
+        "APIFY_API_TOKEN",
+        "ghcr.io/ernestalabs/web-intelligence-mcp:latest"
+      ],
+      "env": {
+        "APIFY_API_TOKEN": "<YOUR_APIFY_TOKEN>"
+      }
+    }
+  }
+}
