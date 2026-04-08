@@ -1,104 +1,94 @@
-# Forage MCP — Your Agent Shouldn't Be Dumb
+# Forage MCP: The Knowledge Layer Your Agent Is Missing
 
-**By Riccardo Minniti / Ernesta Labs** | [director@useforage.xyz](mailto:director@useforage.xyz)
-
-Right now your AI agent is smart — until it needs live data. Then it hallucinates, guesses, or tells you it "can't browse the internet." Your competitors' agents do the same thing. That's the gap.
-
-Forage closes it. One connection. One token. 36 tools that give your agent real-time web intelligence and a knowledge graph that never forgets.
-
-**[website: useforage.xyz](https://useforage.xyz) · [github.com/ErnestaLabs/web-intelligence-mcp](https://github.com/ErnestaLabs/web-intelligence-mcp) · [apify.com/ernesta_labs/forage](https://apify.com/ernesta_labs/forage)**
+**Riccardo Minniti / Ernesta Labs** · [director@useforage.xyz](mailto:director@useforage.xyz) · [useforage.xyz](https://useforage.xyz)
 
 ---
 
-## What Your Agent Can Do Right Now
+## Your agent is smart. Until you ask it to do something real.
 
-Search the web. Maybe scrape a page if you set up Puppeteer. Hope the search results are current. Hope the page isn't behind a login wall. And tomorrow? Your agent forgets everything it found today.
+It hallucinates company facts. It can't find emails. It has no memory between sessions. Every research task starts from zero. It reads a search result, answers your question, and forgets everything it found.
 
-That's not intelligence. That's a calculator with a browser extension.
+You're not running an intelligent agent. You're running a smart model with amnesia.
 
-### What changes with Forage:
+Other tools give your agent search results, give it a page to read. That's the ceiling. Your agent reads, answers, forgets. Tomorrow it knows nothing about what it learned today.
 
-- **Your agent finds real leads** — not "here's a list of companies I remembered from training data" but live B2B leads with verified emails, titles, LinkedIn profiles. Filtered by job title, location, industry, company size.
-- **Your agent knows companies before you do** — domain in, full profile out: website content, funding history, tech stack, hiring signals, competitor positioning, social proof. All from live sources.
-- **Your agent builds a memory** — every search, every company lookup, every email discovery feeds a persistent knowledge graph. Your agent searched Stripe last week? It already knows Stripe's competitors, funding, key people, and tech stack. No re-scraping needed.
-- **Your agent can reason about what it finds** — causal chains, entity relationships, shock propagation. Not just "here's data" but "here's what happens if X happens to Y."
+**What's the reasoning behind settling for that,** when your competitors' agents could be building institutional knowledge while yours starts from scratch every single time?
 
 ---
 
-## Your Agent Right Now vs. Your Agent With Forage
+## Let's say your agent actually had a brain.
 
-| | Without Forage | With Forage |
-|---|---|---|
-| **Web search** | Guesses or hallucinates | Live results from multiple engines |
-| **Company research** | You do it manually | Domain in, full profile out |
-| **Email discovery** | "I can't access that" | Verified B2B emails with confidence scores |
-| **Lead generation** | Not possible | Hundreds of filtered leads with contact data |
-| **Memory** | Forgets everything after session | Persistent graph across all sessions |
-| **Context** | Starts from zero each time | Builds on everything it's ever found |
-| **Competitor analysis** | Reads their about page | Pricing, reviews, ad strategy, hiring trends, tech stack |
-| **Relationships** | Sees isolated facts | Discovers connections between entities you've researched |
+Imagine your agent searched Stripe six weeks ago. It found their competitors, funding history, key executives, tech stack, hiring patterns. Today you ask about Stripe again and your agent already knows all of it. No re-scraping. No guessing. It adds what is new and moves on.
+
+That's not a search tool. That's a compounding intelligence asset.
+
+**What would be different for you if your agent:**
+
+- Found 200 verified B2B leads while you slept, with emails, titles, LinkedIn profiles, filtered by role and location
+- Profiled any company from a domain name: funding, investors, tech stack, hiring signals, competitor positioning, social proof, all from live sources
+- Discovered the relationship between two companies you're researching, not from memory, but from a graph of nearly **1 million entities** with 200+ typed relationship types
+- Tracked hiring trends at a prospect over time, saw them shift from engineering hires to sales hires, and told you what that means
+- Ran causal analysis, not "here's data" but "here's what happens if X happens to Y"
+
+**Step into that version of your agent for a second.** One that searches, scrapes, discovers emails, maps markets, profiles companies, tracks signals, analyzes competitors, and remembers all of it in a graph that gets smarter every day.
+
+What would that do for your workflow?
 
 ---
 
-## The Knowledge Graph — What Your Agent Remembers
+## The Knowledge Graph: What Compounds
 
-Every tool call feeds a growing knowledge graph. Not a cache. Not a log. A structured graph with nearly **1 million entities** and growing — companies, people, domains, funding rounds, competitors, technologies, markets, legal entities, geopolitical events, financial instruments.
+Every tool call feeds a persistent knowledge graph. Your agent's research accumulates across sessions. The more it uses Forage, the smarter it gets.
 
-Your agent searched for "Stripe" six weeks ago? The graph already knows:
+Not a cache. Not a log. A structured graph with nearly **1 million entities** and growing: companies, people, domains, funding rounds, competitors, technologies, markets, legal entities, geopolitical events, financial instruments. A FIBO-aligned ontology with 150+ entity types and 200+ relationship types including causal chains, contagion pathways, regime transitions, and shock propagation.
 
-- Stripe's competitors and their positioning
-- Key executives and their LinkedIn profiles
-- Funding history, investors, valuation trajectory
-- Tech stack, hiring patterns, market signals
-- Relationships to other entities your agent has researched
+When your agent needs to know something, it checks the graph first. What it already knows, it doesn't re-learn. What is new, it adds. What is connected, it discovers.
 
-The graph uses a **FIBO-aligned ontology** — 150+ entity types spanning finance, technology, geopolitics, markets, legal, biology. Not made-up categories. Real-world ontological structure. 200+ typed relationship types including causal chains, contagion pathways, regime transitions.
-
-When your agent needs to know something, it checks the graph first. What it already knows, it doesn't need to re-learn. What it finds new, it adds. The more your agent uses Forage, the smarter your agent gets.
+This is the differentiator. Other tools give your agent a response. Forage gives your agent a memory that never forgets and a reasoning layer that connects everything it has ever learned.
 
 ---
 
 ## 36 Tools. One Connection.
 
-### Core Tools (10)
+### Core Tools
 
-| Tool | What your agent does with it | Cost |
-|------|------------------------------|------|
+| Tool | What your agent does | Cost |
+|------|---------------------|------|
 | `search_web` | Search the web, get real results | $0.03 |
 | `scrape_page` | Extract clean text from any URL | $0.07 |
-| `get_company_info` | Domain → full company profile with contacts | $0.08 |
+| `get_company_info` | Domain to full company profile with contacts | $0.08 |
 | `find_emails` | Discover verified B2B emails with confidence scores | $0.10 |
 | `find_local_leads` | Find local businesses by type and location | $0.15 |
-| `find_leads` | Generate B2B lead lists filtered by title/location/industry | $0.25/100 leads |
+| `find_leads` | Generate B2B lead lists filtered by title/location/industry | $0.25/100 |
 | `list_verified_actors` | Browse available data source actors | $0.01 |
 | `get_actor_schema` | Get input schema for any actor | $0.01 |
-| `call_actor` | Run any data actor with custom input | actor price + 25% |
-| `search_apify_store` | Search 1500+ data source actors | **Free** |
+| `call_actor` | Run any data actor with custom input | actor + 25% |
+| `search_apify_store` | Search 1500+ data actors | **Free** |
 
-### Skills — Multi-Source Intelligence Bundles (13)
+### Skills: Multi-Source Intelligence Bundles
 
-Each skill runs multiple data sources in parallel and returns a ready-to-use intelligence package. Your agent calls one tool. It gets the result of 5-8 sources merged together.
+One call. Five to eight sources merged into a single intelligence package.
 
-| Skill | What your agent gets | Cost |
-|-------|----------------------|------|
-| `skill_company_dossier` | Full company profile + contacts, funding, tech, LinkedIn | $0.50 |
-| `skill_prospect_company` | Up to 20 senior decision-makers with emails and LinkedIn | $0.75 |
+| Skill | Your agent gets | Cost |
+|-------|----------------|------|
+| `skill_company_dossier` | Full company profile + 10 contacts with emails | $0.50 |
+| `skill_prospect_company` | Up to 20 senior decision-makers + emails + LinkedIn | $0.75 |
 | `skill_outbound_list` | 100+ verified leads ready for CRM import | $3.50 |
-| `skill_local_market_map` | Up to 100 local businesses with contact info and ratings | $0.80 |
-| `skill_decision_maker_finder` | 25 decision-makers by department and seniority tier | $1.00 |
-| `skill_competitor_intel` | Pricing, features, reviews, positioning from live sources | $0.80 |
+| `skill_local_market_map` | Up to 100 local businesses with contact info + ratings | $0.80 |
+| `skill_decision_maker_finder` | 25 decision-makers by department + seniority | $1.00 |
+| `skill_competitor_intel` | Pricing, features, reviews, positioning | $0.80 |
 | `skill_competitor_ads` | Active ad copy, landing pages, platforms | $0.65 |
-| `skill_job_signals` | Hiring trends, open roles, department breakdown, expansion signals | $0.55 |
-| `skill_tech_stack` | Technologies used with detection confidence scores | $0.45 |
-| `skill_funding_intel` | Funding rounds, investors, valuation, press coverage | $0.70 |
-| `skill_social_proof` | Reviews, ratings, testimonials from Trustpilot, G2, Capterra | $0.55 |
-| `skill_market_map` | Complete competitor landscape for any market | $1.20 |
-| `skill_kaspr_enrich` | LinkedIn profile enrichment: experience, skills, contact data | $0.75 |
+| `skill_job_signals` | Hiring trends, open roles, department breakdown | $0.55 |
+| `skill_tech_stack` | Technologies used with detection confidence | $0.45 |
+| `skill_funding_intel` | Funding rounds, investors, valuation, press | $0.70 |
+| `skill_social_proof` | Reviews, ratings, testimonials: G2, Trustpilot, Capterra | $0.55 |
+| `skill_market_map` | Complete competitor landscape for a market | $1.20 |
+| `skill_kaspr_enrich` | LinkedIn profile: experience, skills, contact data | $0.75 |
 
-### Graph Tools (14)
+### Graph Tools
 
-| Tool | What your agent does with it | Cost |
-|------|------------------------------|------|
+| Tool | What your agent does | Cost |
+|------|---------------------|------|
 | `query_knowledge` | Search the graph for previously discovered entities | $0.05 |
 | `enrich_entity` | Full profile with all relationships from the graph | $0.08 |
 | `find_connections` | Find relationship paths between any two entities | $0.12 |
@@ -116,34 +106,50 @@ Each skill runs multiple data sources in parallel and returns a ready-to-use int
 
 ---
 
-## Why Your Agent Doesn't Already Do This
+## And on the flip side: what happens if you don't?
 
-**Web search tools** give your agent search results. That's it. No company profiles. No emails. No leads. No memory. Your agent reads a search result, forms an answer, and forgets everything it found.
+Your agent stays exactly where it is. Every search starts from zero. Every company lookup is a fresh scrape. Every lead list is manual. Your competitors' agents are building knowledge graphs, discovering connections, getting smarter every day, and yours is forgetting everything it learns within the session.
 
-**Other scraping tools** let your agent fetch a page. But your agent still has to figure out what to do with it. No entity extraction. No graph storage. No enrichment. No connections between findings.
+Two days, two weeks, two months, two years from now: your agent still hallucinates company data. Still can't find emails. Still has no memory. Still starts from nothing every time you ask it to research something.
 
-**Your agent with Forage** searches, scrapes, discovers emails, maps local businesses, profiles companies, finds decision-makers, tracks hiring signals, analyses competitors — and remembers all of it in a graph that compounds over time.
+Meanwhile the agents that connected to Forage six months ago? They know more about your market than you do. Because everything they've ever found is still there. Connected. Growing.
 
-The difference isn't features. It's that your agent stops being amnesiac.
+---
+
+## What This Is. What It Isn't.
+
+**This is** a knowledge layer for AI agents: web intelligence plus persistent memory. One connection, 36 tools, a graph that never forgets.
+
+**This is not** a search wrapper. Not a RAG system. Not a vector database. Not a chatbot with browsing.
+
+**This is** pay-per-call. Your agent uses it, you see the cost. Your first $5 is free.
+
+**This is not** a subscription. No monthly fee. No minimum commitment.
+
+---
+
+## What $5 Gets You
+
+| | |
+|---|---|
+| $5 free | 167 web searches, or 71 page scrapes, or 50 email lookups, or 1 full dossier + 33 searches |
+| $10 | ~1,000 tool calls across all features |
+| $50 | Full research pipeline: dozens of dossiers, hundreds of searches, thousands of graph queries |
 
 ---
 
 ## Quick Start
 
-### 1. Get Your Apify Token
+Get a free Apify token at [console.apify.com](https://console.apify.com/account/integrations). Takes 30 seconds. Your $5 free credit activates immediately.
 
-Free at [console.apify.com](https://console.apify.com/account/integrations). Takes 30 seconds. Your $5 free credit activates immediately.
-
-### 2. Connect
-
-**Claude Desktop** — add to `%APPDATA%\Claude\claude_desktop_config.json`:
+**Claude Desktop** (add to `%APPDATA%\Claude\claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
     "forage": {
       "command": "npx",
-      "args": ["-y", "@anthropic/mcp-proxy", "https://ernesta-labs--forage.apify.actor/mcp/sse"],
+      "args": ["-y", "@anthropic/mcp-proxy", "https://ernesta-labs--forage.apify.actor/mcp"],
       "env": { "APIFY_API_TOKEN": "YOUR_APIFY_TOKEN" }
     }
   }
@@ -157,7 +163,7 @@ Free at [console.apify.com](https://console.apify.com/account/integrations). Tak
   "mcpServers": {
     "forage": {
       "command": "npx",
-      "args": ["-y", "@anthropic/mcp-proxy", "https://ernesta-labs--forage.apify.actor/mcp/sse"],
+      "args": ["-y", "@anthropic/mcp-proxy", "https://ernesta-labs--forage.apify.actor/mcp"],
       "env": { "APIFY_API_TOKEN": "YOUR_APIFY_TOKEN" }
     }
   }
@@ -178,53 +184,13 @@ Free at [console.apify.com](https://console.apify.com/account/integrations). Tak
 }
 ```
 
-**n8n / LangGraph / Custom:** SSE endpoint at `https://ernesta-labs--forage.apify.actor/mcp/sse`. Your Apify token in the Authorization header.
-
-### 3. Tell Your Agent
-
-Add to your agent's system prompt:
-
-> When you need live web data, company info, verified emails, or lead lists, use Forage tools. Each call costs money (shown in responses), so batch operations when possible. Your knowledge graph persists across sessions — check it first before making new web calls.
+**n8n / LangGraph / Custom:** Connect to `https://ernesta-labs--forage.apify.actor/mcp` with your Apify token in the Authorization header.
 
 ---
-
-## What $5 Gets You
-
-No credit card. No subscription. Your first $5 is free.
-
-| Spend | Get |
-|-------|-----|
-| $5 free | 167 web searches, or 71 page scrapes, or 50 email lookups, or 1 full company dossier + 33 searches |
-| $10 | ~1,000 tool calls across all features |
-| $50 | Full research pipeline: dozens of dossiers, hundreds of searches, thousands of graph queries |
-
-Pay per call. Every response shows the cost. No surprises.
-
----
-
-## What This Is. What It Isn't.
-
-**This is** an MCP server that gives your agent live web intelligence and persistent memory.
-
-**This is not** a search engine wrapper. Not a RAG system. Not a vector database. Not a chatbot with browsing.
-
-**This is** a 36-tool suite: search, scrape, discover emails, generate leads, profile companies, map markets, track hiring signals, analyse competitors, run causal analysis — all wired into a knowledge graph with nearly 1 million entities.
-
-**This is not** a toy graph with 50 companies someone loaded in. It's a FIBO-aligned ontology with 150+ entity types and 200+ relationship types covering finance, technology, geopolitics, markets, legal, biology. Causal chains. Contagion pathways. Regime transitions. Shock propagation. Real structure.
-
-**This is** pay-per-call. Your agent uses it, you see the cost. Your first $5 is free.
-
-**This is not** a subscription. No monthly fee. No minimum commitment.
-
----
-
-## Support
 
 - **Email:** [director@useforage.xyz](mailto:director@useforage.xyz)
 - **Website:** [useforage.xyz](https://useforage.xyz)
-- **GitHub Issues:** [github.com/ErnestaLabs/web-intelligence-mcp/issues](https://github.com/ErnestaLabs/web-intelligence-mcp/issues)
-- **Apify Actor:** [apify.com/ernesta_labs/forage](https://apify.com/ernesta_labs/forage)
+- **GitHub:** [github.com/ErnestaLabs/web-intelligence-mcp](https://github.com/ErnestaLabs/web-intelligence-mcp)
+- **Apify:** [apify.com/ernesta_labs/forage](https://apify.com/ernesta_labs/forage)
 
----
-
-MIT License — Copyright (c) 2026 Riccardo Minniti / Ernesta Labs
+MIT License. Copyright (c) 2026 Riccardo Minniti / Ernesta Labs
