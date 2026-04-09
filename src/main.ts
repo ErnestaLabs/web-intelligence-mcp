@@ -10,6 +10,19 @@ import {
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { graphClient } from './forage-graph-client.js';
+import {
+  INTERCOM_TOOLS,
+  verifyIntercomWebhook,
+  handleContactCreated,
+  handleConversationOpened,
+  handleConversationClosed,
+  handleUserIntercalated,
+  handleIntercomCreateContact,
+  handleIntercomGetConversation,
+  handleIntercomReply,
+  handleIntercomQualifyLead,
+  handleIntercomRouteToSales,
+} from './intercom-integration.js';
 
 // ==========================================
 // ERNESTA LABS BIBLE SECTION 5: PRICING CONFIG
@@ -58,6 +71,12 @@ const PRICING = {
   SKILL_SOCIAL_PROOF: { event: 'skill-social-proof', charge: 0.55 },
   SKILL_MARKET_MAP: { event: 'skill-market-map', charge: 1.20 },
   SKILL_KASPR_ENRICH: { event: 'skill-kaspr-enrich', charge: 0.75 },
+  // Intercom Integration
+  INTERCOM_CREATE_CONTACT: { event: 'intercom-create-contact', charge: 0.02 },
+  INTERCOM_GET_CONVERSATION: { event: 'intercom-get-conversation', charge: 0.02 },
+  INTERCOM_REPLY: { event: 'intercom-reply', charge: 0.03 },
+  INTERCOM_QUALIFY_LEAD: { event: 'intercom-qualify-lead', charge: 0.25 },
+  INTERCOM_ROUTE_TO_SALES: { event: 'intercom-route-to-sales', charge: 0.02 },
 };
 
 const VERIFIED_ACTORS = new Map<string, { charge: number; unit: string; desc: string }>([
@@ -193,6 +212,8 @@ const TOOLS = [
   { name: 'skill_social_proof', description: 'Gather social proof: Trustpilot reviews (structured), G2 ratings, Capterra ratings, own-site testimonials and case studies. Cost: $0.55', inputSchema: { type: 'object', properties: { company_name: { type: 'string' }, domain: { type: 'string' } }, required: ['company_name'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
   { name: 'skill_market_map', description: 'Map an entire market: top players, comparison sites, pricing tiers, G2/Capterra category pages. Returns structured competitive landscape. Cost: $1.20', inputSchema: { type: 'object', properties: { market: { type: 'string', description: 'e.g. "CRM software" or "email marketing"' }, max_competitors: { type: 'number', default: 10 } }, required: ['market'] }, annotations: { readOnlyHint: true, destructiveHint: false } },
   { name: 'skill_kaspr_enrich', description: 'Enrich a LinkedIn profile: name, headline, experience, email, phone, skills. Uses LinkedIn profile scraper + people finder. Cost: $0.75', inputSchema: { type: 'object', properties: { linkedin_id: { type: 'string', description: 'LinkedIn URL or profile ID' }, prospect_name: { type: 'string' } }, required: [] }, annotations: { readOnlyHint: true, destructiveHint: false } },
+  // ── INTERCOM INTEGRATION ────────────────────────────────────────────────────
+  ...INTERCOM_TOOLS,
 ];
 
 // ==========================================
@@ -247,6 +268,12 @@ export function setupMcpServer() {
         case 'skill_social_proof': return await handleSkillSocialProof(args as any);
         case 'skill_market_map': return await handleSkillMarketMap(args as any);
         case 'skill_kaspr_enrich': return await handleSkillKasprEnrich(args as any);
+        // Intercom tools
+        case 'intercom_create_contact': return await handleIntercomCreateContact(args as any);
+        case 'intercom_get_conversation': return await handleIntercomGetConversation(args as any);
+        case 'intercom_reply': return await handleIntercomReply(args as any);
+        case 'intercom_qualify_lead': return await handleIntercomQualifyLead(args as any);
+        case 'intercom_route_to_sales': return await handleIntercomRouteToSales(args as any);
         default: throw new Error(`Unknown tool: ${name}`);
       }
     } catch (error) {
@@ -1815,12 +1842,58 @@ async function main() {
     
     app.get('/health', (_req: any, res: any) =>
       res.json({ status: 'ok', server: 'forage', transport: 'streamable-http', tools: TOOLS.length }));
-    
+
     app.get('/tools', (_req: any, res: any) => {
       currentApiToken = extractToken(_req.headers['authorization']);
       res.json({ tools: TOOLS.map(t => ({ name: t.name, description: t.description, required: t.inputSchema.required || [] })) });
     });
-    
+
+    // ── INTERCOM WEBHOOK ENDPOINT ─────────────────────────────────────
+    app.post('/intercom/webhook', async (req: any, res: any) => {
+      try {
+        const signature = req.headers['x-hub-signature-256'] as string;
+        const secret = process.env.INTERCOM_WEBHOOK_SECRET;
+        const payload = JSON.stringify(req.body);
+
+        // Verify webhook signature if secret is configured
+        if (secret && signature) {
+          const isValid = verifyIntercomWebhook(payload, signature.replace('sha256=', ''), secret);
+          if (!isValid) {
+            return res.status(401).json({ error: 'Invalid webhook signature' });
+          }
+        }
+
+        const event = req.body;
+        const topic = req.headers['x-intercom-topic'] as string;
+
+        console.log('[Intercom] Webhook received:', topic);
+
+        let result;
+        switch (topic) {
+          case 'contact.created':
+            result = await handleContactCreated(event);
+            break;
+          case 'conversation.user.created':
+          case 'conversation.opened':
+            result = await handleConversationOpened(event);
+            break;
+          case 'conversation.closed':
+            result = await handleConversationClosed(event);
+            break;
+          case 'conversation.user.intercalated':
+            result = await handleUserIntercalated(event);
+            break;
+          default:
+            result = { status: 'ignored', topic };
+        }
+
+        res.json({ received: true, ...result });
+      } catch (err: any) {
+        console.error('[Intercom] Webhook error:', err);
+        res.status(500).json({ error: err.message });
+      }
+    });
+
     app.post('/call/:tool', async (req: any, res: any) => {
       try {
         currentApiToken = extractToken(req.headers['authorization']);
@@ -1867,6 +1940,12 @@ async function main() {
           case 'skill_social_proof': result = await handleSkillSocialProof(args); break;
           case 'skill_market_map': result = await handleSkillMarketMap(args); break;
           case 'skill_kaspr_enrich': result = await handleSkillKasprEnrich(args); break;
+          // Intercom tools
+          case 'intercom_create_contact': result = await handleIntercomCreateContact(args); break;
+          case 'intercom_get_conversation': result = await handleIntercomGetConversation(args); break;
+          case 'intercom_reply': result = await handleIntercomReply(args); break;
+          case 'intercom_qualify_lead': result = await handleIntercomQualifyLead(args); break;
+          case 'intercom_route_to_sales': result = await handleIntercomRouteToSales(args); break;
           default:
             return res.status(404).json({ error: `Unknown tool: ${toolName}`, available: TOOLS.map(t => t.name) });
         }
